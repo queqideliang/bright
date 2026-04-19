@@ -74,8 +74,8 @@ export default function DashboardPage() {
   };
 
   const handleDeleteItem = async (p: Project) => {
-    if (confirmDeleteId !== p.id) {
-      setConfirmDeleteId(p.id);
+    if (confirmDeleteId !== String(p.id)) {
+      setConfirmDeleteId(String(p.id));
       setTimeout(() => setConfirmDeleteId(null), 3000);
       return;
     }
