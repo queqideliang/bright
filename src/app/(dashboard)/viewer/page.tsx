@@ -21,6 +21,8 @@ export default function ViewerPage() {
   const [indexStatus, setIndexStatus] = useState<IndexStatus>("idle");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [realSpeckleIds, setRealSpeckleIds] = useState<{ streamId?: string; modelId?: string }>({});
+  const [parseProgress, setParseProgress] = useState<number>(selectedProject.progress || 0);
+  const progressStartRef = useRef<{ time: number; prog: number } | null>(null);
   
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -136,9 +138,12 @@ export default function ViewerPage() {
             const pollResp = await fetch(`/api/extract?projectId=${encodeURIComponent(String(selectedProject.id))}`);
             const pollData = await pollResp.json();
             
-            // 更新进度
-            if (pollData.progress) {
-               // 联动更新外部 context 的项目信息（可选）
+            // 更新真实进度
+            if (typeof pollData.progress === "number" && pollData.progress > 0) {
+              setParseProgress(pollData.progress);
+              if (!progressStartRef.current) {
+                progressStartRef.current = { time: Date.now(), prog: pollData.progress };
+              }
             }
 
             // 更新数据摘要
@@ -243,7 +248,28 @@ export default function ViewerPage() {
                <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, color: S.colors.text3 }}>
                   <div style={{ fontSize: 48, animation: "spin 3s linear infinite" }}>⚙️</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: S.colors.text }}>AI 正在深度解析模型</div>
-                  <div style={{ fontSize: 13, background: S.colors.bg3, padding: "8px 20px", borderRadius: 20 }}>解析进度：{indexStatus === "checking" ? "10%" : "正在提取属性及生成 3D 视图..."}</div>
+                  {/* 进度条 */}
+                  <div style={{ width: 260, display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+                    <div style={{ width: "100%", height: 8, borderRadius: 4, background: S.colors.bg3, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${parseProgress}%`, height: "100%", borderRadius: 4,
+                        background: `linear-gradient(90deg, ${S.colors.accent}, ${S.colors.orange})`,
+                        transition: "width 1s ease",
+                      }} />
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: S.colors.accent }}>{parseProgress}%</div>
+                    {/* 预计剩余时间 */}
+                    {(() => {
+                      const s = progressStartRef.current;
+                      if (!s || parseProgress <= s.prog) return null;
+                      const elapsed = (Date.now() - s.time) / 1000;
+                      const rate = (parseProgress - s.prog) / elapsed;
+                      const remaining = Math.round((100 - parseProgress) / rate);
+                      if (remaining <= 0 || remaining > 1800) return null;
+                      const label = remaining >= 60 ? `约 ${Math.ceil(remaining / 60)} 分钟` : `约 ${remaining} 秒`;
+                      return <div style={{ fontSize: 11, color: S.colors.text3 }}>预计剩余 {label}</div>;
+                    })()}
+                  </div>
                   <div style={{ fontSize: 12, color: S.colors.text3, maxWidth: 300, textAlign: "center", lineHeight: 1.6 }}>
                     数据解析完成后，您可以查看详细的构件统计和楼层信息，3D 视图将在同步完成后自动跳出。
                   </div>
