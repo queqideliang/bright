@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/app-context";
 import { IconUpload, IconAudit, IconExport } from "@/components/icons";
@@ -46,27 +46,61 @@ export default function DashboardPage() {
   const [dataSource, setDataSource] = useState<"demo" | "live">("demo");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // 尝试从 Supabase 加载真实数据
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const resp = await fetch("/api/projects", { cache: "no-store" });
-        if (!resp.ok) return;
-        const data = await resp.json();
+  // 用于 ETA 计算：记录每个模型首次被观测到 PARSING 时的时间和进度
+  const parsingStartRef = useRef<Record<string, { time: number; progress: number }>>({});
+  // 用于轮询时读取最新 projects 而不产生闭包陈旧值
+  const projectsRef = useRef<Project[]>(projects);
+  useEffect(() => { projectsRef.current = projects; }, [projects]);
 
-        if (data.projects && data.projects.length > 0) {
-          const mapped = data.projects.flatMap(mapSupabaseToProject);
-          setProjects(mapped);
-          setStats(data.stats);
-          setDataSource("live");
-        }
-        // 无数据时保持演示数据
-      } catch {
-        // API 不可用时保持演示数据
-      }
-    };
-    loadProjects();
+  const fetchProjects = async () => {
+    const resp = await fetch("/api/projects", { cache: "no-store" });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.projects && data.projects.length > 0) {
+      const mapped = data.projects.flatMap(mapSupabaseToProject);
+      setProjects(mapped);
+      setStats(data.stats);
+      setDataSource("live");
+    }
+  };
+
+  // 初始加载
+  useEffect(() => {
+    fetchProjects().catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardRefreshKey]);
+
+  // 有解析中的模型时每 5 秒自动轮询
+  useEffect(() => {
+    if (dataSource !== "live") return;
+    const interval = setInterval(() => {
+      const needsPoll = projectsRef.current.some(
+        (p) => p.status === "parsing" || p.status === "PARSING" || p.status === "auditing" || p.status === "AUDITING"
+      );
+      if (!needsPoll) return;
+      fetchProjects().catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataSource]);
+
+  /** 计算预计剩余时间文字 */
+  const getETA = (p: Project): string | null => {
+    if (p.progress <= 0) return null;
+    const key = String(p.id);
+    if (!parsingStartRef.current[key]) {
+      parsingStartRef.current[key] = { time: Date.now(), progress: p.progress };
+      return null;
+    }
+    const { time: t0, progress: p0 } = parsingStartRef.current[key];
+    const progressMade = p.progress - p0;
+    if (progressMade <= 0) return null;
+    const elapsed = (Date.now() - t0) / 1000;
+    const remaining = Math.round((elapsed / progressMade) * (100 - p.progress));
+    if (remaining <= 0 || remaining > 1800) return null;
+    if (remaining >= 60) return `约 ${Math.ceil(remaining / 60)} 分钟`;
+    return `约 ${remaining} 秒`;
+  };
 
   const handleViewProject = (p: Project) => {
     setSelectedProject(p);
@@ -217,14 +251,20 @@ export default function DashboardPage() {
                   </td>
                   <td style={{ padding: "12px 16px", color: S.colors.text2 }}>{p.elements > 0 ? p.elements.toLocaleString() : "—"}</td>
                   <td style={{ padding: "12px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, background: sb, color: sc }}>{statusLabel(p.status)}</span>
-                      {(p.status === "parsing" || p.status === "PARSING" || p.status === "auditing" || p.status === "AUDITING") && (
-                        <div style={{ flex: 1, maxWidth: 80, height: 4, borderRadius: 2, background: S.colors.bg3 }}>
+                    {(p.status === "parsing" || p.status === "PARSING" || p.status === "auditing" || p.status === "AUDITING") ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, background: sb, color: sc }}>{statusLabel(p.status)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: sc }}>{p.progress}%</span>
+                        </div>
+                        <div style={{ width: 120, height: 4, borderRadius: 2, background: S.colors.bg3 }}>
                           <div style={{ width: `${p.progress}%`, height: "100%", borderRadius: 2, background: p.status.includes("pars") || p.status === "PARSING" ? S.colors.orange : S.colors.blue, transition: "width 1s" }} />
                         </div>
-                      )}
-                    </div>
+                        {(() => { const eta = getETA(p); return eta ? <span style={{ fontSize: 10, color: S.colors.text3 }}>预计剩余 {eta}</span> : null; })()}
+                      </div>
+                    ) : (
+                      <span style={{ padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, background: sb, color: sc }}>{statusLabel(p.status)}</span>
+                    )}
                   </td>
                   <td style={{ padding: "12px 16px", color: S.colors.text3, fontSize: 12 }}>{p.date}</td>
                   <td style={{ padding: "12px 16px", display: "flex", gap: 6 }}>
