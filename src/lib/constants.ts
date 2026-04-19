@@ -133,7 +133,7 @@ export const S = {
 
 // ── 演示项目数据 ───────────────────────────────────────────────
 export const DEMO_PROJECTS: Project[] = [
-  { id: 1, name: "高庄子托老所_含机电", format: "IFC", elements: 6549, status: "done",      progress: 100, date: "2026-04-05", speckleStreamId: "c4c835cd7e", speckleModelId: "99a7e3f71c" },
+  { id: 1, name: "高庄子托老所_含机电", format: "IFC", elements: 6549, status: "done",      progress: 100, date: "2026-04-05" },
   { id: 2, name: "朝阳区办公楼_结构",   format: "RVT", elements: 3280, status: "auditing",  progress: 72,  date: "2026-04-06" },
   { id: 3, name: "展厅外观概念模型",     format: "FBX", elements: 0,    status: "view_only", progress: 100, date: "2026-04-04" },
   { id: 4, name: "海淀科技园_暖通",     format: "IFC", elements: 0,    status: "parsing",   progress: 35,  date: "2026-04-06" },

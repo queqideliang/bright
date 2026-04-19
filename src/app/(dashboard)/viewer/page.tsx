@@ -30,8 +30,8 @@ export default function ViewerPage() {
   const isAnalyzable = AI_READY_FORMATS.includes(selectedProject.format);
 
   // 优先级：1. 轮询到的真实 ID > 2. 项目自带 ID > 3. 环境变量/演示 ID
-  const speckleProjectId = realSpeckleIds.streamId || selectedProject.speckleStreamId || process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID || "c4c835cd7e";
-  const speckleModelId = realSpeckleIds.modelId || selectedProject.speckleModelId || process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID || "99a7e3f71c";
+  const speckleProjectId = realSpeckleIds.streamId || selectedProject.speckleStreamId || process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID || "";
+  const speckleModelId = realSpeckleIds.modelId || selectedProject.speckleModelId || process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID || "";
   
   // NOTE: 仅当有真实的流 ID 时（非演示 ID 且项目非演示项目），才生成 Viewer URL
   const hasRealSpeckle = !!(realSpeckleIds.streamId || selectedProject.speckleStreamId);
