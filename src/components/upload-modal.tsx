@@ -9,7 +9,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useApp } from "@/lib/app-context";
 import { IconUpload } from "@/components/icons";
 import { S } from "@/lib/constants";
-import { ALL_FORMATS, MAX_FILE_SIZE, getFileAcceptString, isAiReady } from "@/lib/supported-formats";
+import { ALL_FORMATS, MAX_FILE_SIZE, getFileAcceptString } from "@/lib/supported-formats";
 import { createClient } from "@/lib/supabase/client";
 
 /** 最大轮询次数（100 次 × 3 秒 = 5 分钟） */
@@ -31,22 +31,22 @@ export function UploadModal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  // ── 组件挂载时检查未完成的导入任务 ──
+  // ── 组件挂载时检查未完成的解析任务 ──
   useEffect(() => {
     const checkPendingImports = async () => {
       try {
         const { data: models } = await supabase
           .from("models")
-          .select("id, name, import_job_id, import_status")
-          .eq("import_status", "processing")
+          .select("id, name, status")
+          .eq("status", "PARSING")
           .order("created_at", { ascending: false })
           .limit(1);
 
-        if (models && models.length > 0 && models[0].import_job_id) {
+        if (models && models.length > 0) {
           setState({
             phase: "processing",
             name: models[0].name || "未知模型",
-            importJobId: models[0].import_job_id,
+            importJobId: models[0].id,
             modelId: models[0].id,
             pollCount: 0,
           });
@@ -59,13 +59,12 @@ export function UploadModal() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── 轮询 Speckle 导入状态 ──
+  // ── 轮询模型解析状态 ──
   useEffect(() => {
     if (state.phase !== "processing") return;
 
-    const { importJobId, pollCount } = state;
+    const { modelId, pollCount } = state;
 
-    // 超过最大轮询次数
     if (pollCount >= MAX_POLL_ATTEMPTS) {
       setState({
         phase: "failed",
@@ -77,23 +76,26 @@ export function UploadModal() {
 
     const timer = setInterval(async () => {
       try {
-        const resp = await fetch(`/api/import-status/${importJobId}`);
-        if (!resp.ok) return;
-        const data = await resp.json();
+        const { data: model } = await supabase
+          .from("models")
+          .select("status, progress")
+          .eq("id", modelId)
+          .single();
 
-        if (data.status === "ready") {
+        if (!model) return;
+
+        if (model.status === "COMPLETED") {
           clearInterval(timer);
           setState({ phase: "ready", name: state.name });
           refreshDashboard();
-        } else if (data.status === "failed") {
+        } else if (model.status === "FAILED") {
           clearInterval(timer);
           setState({
             phase: "failed",
-            message: data.error || "Speckle 转换失败，请检查文件格式后重试",
+            message: "模型处理失败，请检查文件格式后重试",
             canRetry: true,
           });
         } else {
-          // 仍在处理中，递增轮询计数
           setState((prev) =>
             prev.phase === "processing"
               ? { ...prev, pollCount: prev.pollCount + 1 }
@@ -107,7 +109,7 @@ export function UploadModal() {
 
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, state.phase === "processing" ? state.importJobId : null]);
+  }, [state.phase, state.phase === "processing" ? state.modelId : null]);
 
   const onClose = () => {
     if (state.phase === "uploading") return; // 上传中禁止关闭
@@ -129,7 +131,8 @@ export function UploadModal() {
   };
 
   /**
-   * 上传流程：构造 FormData → POST 到 /api/upload-to-speckle → 开始轮询
+   * 上传流程：获取签名 URL → 浏览器直传 Supabase Storage → 通知服务端触发 VPS 解析
+   * 绕过 Netlify Function 6MB 体积限制
    */
   const upload = useCallback(async (file: File) => {
     const err = validate(file);
@@ -138,20 +141,23 @@ export function UploadModal() {
     setState({ phase: "uploading", percent: 0, fileName: file.name });
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("projectName", file.name.replace(/\.[^.]+$/, ""));
+      // Step 1: 获取 Supabase Storage 签名上传 URL
+      const urlResp = await fetch("/api/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileSize: file.size }),
+      });
+      if (!urlResp.ok) {
+        const d = await urlResp.json().catch(() => ({}));
+        throw new Error(d.error || `获取上传链接失败 (${urlResp.status})`);
+      }
+      const { signedUrl, storagePath, format } = await urlResp.json();
 
-      // 使用 XMLHttpRequest 以支持上传进度
-      const result = await new Promise<{
-        success: boolean;
-        modelId: string;
-        importJobId: string;
-        name: string;
-        error?: string;
-      }>((resolve, reject) => {
+      // Step 2: 浏览器直接 PUT 到 Supabase（支持进度条）
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/upload-to-speckle");
+        xhr.open("PUT", signedUrl);
+        xhr.setRequestHeader("Content-Type", "application/octet-stream");
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
@@ -164,31 +170,38 @@ export function UploadModal() {
         };
 
         xhr.onload = () => {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            if (xhr.status >= 200 && xhr.status < 300 && data.success) {
-              resolve(data);
-            } else {
-              reject(new Error(data.error || `上传失败 (${xhr.status})`));
-            }
-          } catch {
-            reject(new Error(`服务器响应异常 (${xhr.status})`));
-          }
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`存储上传失败 (${xhr.status})`));
         };
 
         xhr.onerror = () => reject(new Error("网络错误，请检查连接"));
         xhr.ontimeout = () => reject(new Error("上传超时，请稍后重试"));
-        xhr.timeout = 600000; // 10 分钟超时
-
-        xhr.send(formData);
+        xhr.timeout = 600000;
+        xhr.send(file);
       });
 
-      // 上传成功，进入轮询阶段
+      // Step 3: 通知服务端，创建 DB 记录并触发 VPS 解析
+      const completeResp = await fetch("/api/upload-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storagePath,
+          fileName: file.name,
+          format,
+          projectName: file.name.replace(/\.[^.]+$/, ""),
+        }),
+      });
+      if (!completeResp.ok) {
+        const d = await completeResp.json().catch(() => ({}));
+        throw new Error(d.error || `处理启动失败 (${completeResp.status})`);
+      }
+      const { modelId, name } = await completeResp.json();
+
       setState({
         phase: "processing",
-        name: result.name || file.name,
-        importJobId: result.importJobId,
-        modelId: result.modelId,
+        name: name || file.name,
+        importJobId: modelId,
+        modelId,
         pollCount: 0,
       });
       refreshDashboard();
