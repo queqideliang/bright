@@ -1,0 +1,45 @@
+# ================================================================
+#  Netlify 部署配置 — 亮阳 BIM·AI 平台
+#  确保 Next.js SSR 在 Netlify 上正常运行
+# ================================================================
+
+[build]
+  publish = ".next"
+  command = "npm run build"
+
+[build.environment]
+  # Node.js 版本要求（Next.js 16 需要 Node 18+）
+  NODE_VERSION = "20"
+  # 跳过 ESLint 阻断构建（类型错误在 CI 单独处理）
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# ── Next.js on Netlify（@netlify/plugin-nextjs 会自动处理 SSR）──
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# ── 重定向规则 ──────────────────────────────────────────────────
+# 注意：Next.js App Router 的路由由插件自动处理
+# 仅在需要额外域名跳转时添加
+
+# [[redirects]]
+#   from = "https://www.brightsunliang.top/*"
+#   to   = "https://brightsunliang.top/:splat"
+#   status = 301
+
+# ── 自定义响应头 ────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # 安全性
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # 开发友好
+    X-Powered-By = "BIM·AI Platform"
+
+# ── 静态资源长缓存 ──────────────────────────────────────────────
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

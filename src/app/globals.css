@@ -1,0 +1,51 @@
+/* ================================================================
+   全局样式 — BIM AI 平台基础 CSS Reset + 动画定义
+   ================================================================ */
+
+@import "tailwindcss";
+
+/* 全局重置 */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* AI 消息气泡打字动画 */
+@keyframes bounce {
+  to {
+    transform: translateY(-6px);
+    opacity: 0.3;
+  }
+}
+
+/* 渐入动画（用于卡片、模态框） */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease forwards;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
