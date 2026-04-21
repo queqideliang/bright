@@ -21,6 +21,7 @@ interface AppState {
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   loginWithGoogle: () => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
+  verifyOTP: (email: string, token: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   selectedProject: Project;
   setSelectedProject: (p: Project) => void;
@@ -95,7 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** 邮箱注册 */
+  /** 邮箱注册 — 触发发送 OTP 验证码邮件 */
   const signup = useCallback(async (email: string, password: string, name: string) => {
     const { error } = await supabase.auth.signUp({
       email,
@@ -103,6 +104,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       options: {
         data: { full_name: name },
       },
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 验证 OTP 验证码 — 注册邮件中的 6 位数字 */
+  const verifyOTP = useCallback(async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "signup",
     });
     if (error) return { error: error.message };
     return { error: null };
@@ -128,6 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         loginWithGoogle,
         signup,
+        verifyOTP,
         logout,
         selectedProject,
         setSelectedProject,
