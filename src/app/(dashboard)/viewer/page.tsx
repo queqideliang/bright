@@ -10,6 +10,7 @@ import { IconSend } from "@/components/icons";
 import { S } from "@/lib/constants";
 import type { ChatMessage, Project } from "@/lib/types";
 import { BimSummary } from "@/components/bim-summary";
+import { exportToPDF } from "@/lib/export-pdf";
 
 type IndexStatus = "idle" | "checking" | "extracting" | "ready" | "error";
 
@@ -22,6 +23,7 @@ export default function ViewerPage() {
   const [summaryData, setSummaryData] = useState<any>(null);
   const [realSpeckleIds, setRealSpeckleIds] = useState<{ streamId?: string; modelId?: string }>({});
   const [parseProgress, setParseProgress] = useState<number>(selectedProject.progress || 0);
+  const [isExporting, setIsExporting] = useState(false);
   const progressStartRef = useRef<{ time: number; prog: number } | null>(null);
   
   const chatRef = useRef<HTMLDivElement>(null);
@@ -184,10 +186,20 @@ export default function ViewerPage() {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages, typing]);
 
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    // 稍等一小会，确保 UI 更新
+    setTimeout(async () => {
+      const success = await exportToPDF("viewer-container", `${selectedProject.name}-审计报告.pdf`);
+      if (!success) alert("导出失败，请重试");
+      setIsExporting(false);
+    }, 100);
+  };
+
   const quickQuestions = [t.q1, t.q2, t.q3];
 
   return (
-    <div style={{
+    <div id="viewer-container" style={{
       display: "flex", height: "calc(100vh - 104px)",
       borderRadius: 14, overflow: "hidden",
       border: `1px solid ${S.colors.border}`, background: "#fff",
@@ -296,6 +308,17 @@ export default function ViewerPage() {
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(0,0,0,.6)", color: "#e2e8f0", backdropFilter: "blur(8px)" }}>
             {selectedProject.name}
           </span>
+          {indexStatus === "ready" && summaryData && (
+            <button onClick={handleExportPDF} disabled={isExporting}
+              style={{
+                padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, 
+                background: S.colors.blue, color: "#fff", cursor: "pointer", border: "none",
+                opacity: isExporting ? 0.6 : 1, transition: "opacity 0.2s"
+              }}
+            >
+              {isExporting ? "导出中..." : "导出报告 (PDF)"}
+            </button>
+          )}
         </div>
       </div>
 
