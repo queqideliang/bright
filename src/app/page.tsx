@@ -81,7 +81,7 @@ export default function LandingPage() {
             border: "1px solid rgba(99,102,241,.2)",
           }}
         >
-          ✨ Powered by Claude AI + Speckle
+          ✨ ISO 19650 · UK BIM Framework
         </div>
 
         <h1
@@ -125,23 +125,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 数字统计 ── */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 60, padding: "40px 0 80px" }}>
-        {([["128K+", t.statModels], ["500+", t.statUsers], ["< 10s", t.statTime]] as [string, string][]).map(([v, l], i) => (
-          <div key={i} style={{ textAlign: "center" }}>
-            <div
-              style={{
-                fontSize: 36, fontWeight: 800,
-                background: "linear-gradient(135deg, #818cf8, #c084fc)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              }}
-            >
-              {v}
-            </div>
-            <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{l}</div>
-          </div>
-        ))}
-      </div>
+
 
       {/* ── 核心功能卡片 ── */}
       <div
@@ -151,10 +135,10 @@ export default function LandingPage() {
         }}
       >
         {([
-          [t.feat1t, t.feat1d, "📦"],
-          [t.feat2t, t.feat2d, "🤖"],
-          [t.feat3t, t.feat3d, "🔗"],
-          [t.feat4t, t.feat4d, "🔒"],
+          [t.feat1t, t.feat1d, "📋"],
+          [t.feat2t, t.feat2d, "🏷️"],
+          [t.feat3t, t.feat3d, "📝"],
+          [t.feat4t, t.feat4d, "🔧"],
         ] as [string, string, string][]).map(([title, desc, em], i) => (
           <div
             key={i}

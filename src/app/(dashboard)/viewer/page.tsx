@@ -1,24 +1,23 @@
 // ================================================================
-//  模型查看 + AI 审计页 — 真实 AI API + 动态 Speckle Viewer
+//  模型查看 + ISO 19650 合规检查页
+//  左侧：3D Speckle Viewer / BIM 数据摘要
+//  右侧：Fix-it List 合规检查面板
 // ================================================================
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/lib/app-context";
-import { IconSend } from "@/components/icons";
 import { S } from "@/lib/constants";
-import type { ChatMessage, Project } from "@/lib/types";
+import type { Project } from "@/lib/types";
 import { BimSummary } from "@/components/bim-summary";
+import { FixItList } from "@/components/fix-it-list";
 import { exportToPDF } from "@/lib/export-pdf";
 
 type IndexStatus = "idle" | "checking" | "extracting" | "ready" | "error";
 
 export default function ViewerPage() {
   const { t, selectedProject, setSelectedProject } = useApp();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
   const [indexStatus, setIndexStatus] = useState<IndexStatus>("idle");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [realSpeckleIds, setRealSpeckleIds] = useState<{ streamId?: string; modelId?: string }>({});
@@ -26,7 +25,6 @@ export default function ViewerPage() {
   const [isExporting, setIsExporting] = useState(false);
   const progressStartRef = useRef<{ time: number; prog: number } | null>(null);
   
-  const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // NOTE: Speckle 云端解析引擎支持对这些格式提取构件参数，解析成功后均可进行 AI 审计
@@ -41,70 +39,7 @@ export default function ViewerPage() {
   const hasRealSpeckle = !!(realSpeckleIds.streamId || selectedProject.speckleStreamId);
   const viewerUrl = `https://app.speckle.systems/projects/${speckleProjectId}/models/${speckleModelId}#embed=%7B%22isEnabled%22%3Atrue%7D`;
 
-  /** 发送消息到真实 AI API */
-  const send = useCallback(async () => {
-    const q = input.trim();
-    if (!q) return;
-
-    setMessages((prev) => [...prev, { role: "user", text: q }]);
-    setInput("");
-    setTyping(true);
-
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: q,
-          projectId: String(selectedProject.id),
-          modelId: String(selectedProject.id), // selectedProject.id 是模型 UUID
-        }),
-      });
-
-      if (!resp.ok) {
-        throw new Error(`API error: ${resp.status}`);
-      }
-
-      const data = await resp.json();
-      const reply = data.answer || (t.lang === "EN"
-        ? "抱歉，AI 暂时无法回答此问题。"
-        : "Sorry, AI cannot answer this question right now.");
-
-      setMessages((prev) => [...prev, { role: "ai", text: reply }]);
-    } catch (err) {
-      console.error("AI chat error:", err);
-      const errorMsg = t.lang === "EN"
-        ? "⚠️ AI 服务暂时不可用，请稍后再试。"
-        : "⚠️ AI service temporarily unavailable. Please try again later.";
-      setMessages((prev) => [...prev, { role: "ai", text: errorMsg }]);
-    } finally {
-      setTyping(false);
-    }
-  }, [input, selectedProject.id, t.lang]);
-
-  // 快捷问题发送函数
-  const sendQuickQuestion = useCallback(async (q: string) => {
-    setMessages((prev) => [...prev, { role: "user", text: q }]);
-    setTyping(true);
-
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          question: q, 
-          projectId: String(selectedProject.id),
-          modelId: String(selectedProject.id), // selectedProject.id 是模型 UUID
-        }),
-      });
-      const data = await resp.json();
-      setMessages((prev) => [...prev, { role: "ai", text: data.answer || "无法回答" }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: "ai", text: "⚠️ AI 服务暂时不可用" }]);
-    } finally {
-      setTyping(false);
-    }
-  }, [selectedProject.id]);
+  // NOTE: AI 聊天功能已重构为 Fix-it List 合规检查面板
 
   // 页面加载时自动触发 VPS 数据提取 + 轮询
   useEffect(() => {
@@ -182,9 +117,6 @@ export default function ViewerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject.id]);
 
-  useEffect(() => {
-    chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
-  }, [messages, typing]);
 
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -196,7 +128,7 @@ export default function ViewerPage() {
     }, 100);
   };
 
-  const quickQuestions = [t.q1, t.q2, t.q3];
+
 
   return (
     <div id="viewer-container" style={{
@@ -322,103 +254,13 @@ export default function ViewerPage() {
         </div>
       </div>
 
-      {/* ── 右侧 AI 审计面板 ── */}
+      {/* ── 右侧 ISO 19650 合规检查面板 ── */}
       <div style={{ width: 380, minWidth: 380, display: "flex", flexDirection: "column", borderLeft: `1px solid ${S.colors.border}` }}>
-        <div style={{ padding: "14px 18px", borderBottom: `1px solid ${S.colors.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: isAnalyzable ? S.colors.green : S.colors.text3 }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: S.colors.text }}>{t.viewer_ai}</span>
-          </div>
-          <span style={{ fontSize: 11, color: S.colors.text3 }}>Gemini + Speckle Sync</span>
-        </div>
-
-        {/* 消息区域 */}
-        <div ref={chatRef} style={{ flex: 1, overflow: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-          {!isAnalyzable ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: S.colors.text3 }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
-              <div style={{ fontSize: 13, lineHeight: 1.6 }}>{t.viewer_fbx_note}</div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 16px" }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🏗️</div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: S.colors.text, marginBottom: 6 }}>{t.viewer_ai}</div>
-              <div style={{ fontSize: 12, color: S.colors.text3, lineHeight: 1.6 }}>{t.viewer_ai_ready}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 20 }}>
-                {quickQuestions.map((q, i) => (
-                  <button key={i} id={`btn-quick-q-${i}`}
-                    onClick={() => sendQuickQuestion(q)}
-                    style={{
-                      padding: "8px 14px", borderRadius: 8, border: `1px solid ${S.colors.border}`,
-                      background: "transparent", fontSize: 12, color: S.colors.text2,
-                      cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all .15s",
-                    }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = S.colors.accentLight; e.currentTarget.style.color = S.colors.accent; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = S.colors.text2; }}
-                  >{q}</button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              {messages.map((m, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, flexDirection: m.role === "user" ? "row-reverse" : "row" }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 700,
-                    background: m.role === "ai" ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : S.colors.bg3,
-                    color: m.role === "ai" ? "#fff" : S.colors.text2,
-                  }}>
-                    {m.role === "ai" ? "AI" : "U"}
-                  </div>
-                  <div style={{
-                    maxWidth: "82%", padding: "10px 14px", borderRadius: 12,
-                    fontSize: 13, lineHeight: 1.65,
-                    background: m.role === "ai" ? S.colors.bg3 : S.colors.accent,
-                    color: m.role === "ai" ? S.colors.text : "#fff", whiteSpace: "pre-wrap",
-                  }}>
-                    {m.text}
-                  </div>
-                </div>
-              ))}
-              {typing && (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>AI</div>
-                  <div style={{ padding: "10px 14px", borderRadius: 12, background: S.colors.bg3, display: "flex", gap: 4 }}>
-                    {[0, 1, 2].map((i) => (
-                      <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: S.colors.text3, animation: `bounce .6s infinite alternate ${i * 0.15}s`, display: "inline-block" }} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {isAnalyzable && (
-          <div style={{ padding: "10px 14px", borderTop: `1px solid ${S.colors.border}` }}>
-            <div style={{ display: "flex", gap: 6, background: S.colors.bg, border: `1px solid ${S.colors.border}`, borderRadius: 10, padding: "4px 4px 4px 14px" }}>
-              <input id="input-ai-chat" value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !typing && send()}
-                placeholder={t.viewer_placeholder}
-                disabled={typing}
-                style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 13, color: S.colors.text, fontFamily: "inherit" }}
-              />
-              <button id="btn-ai-send" onClick={send} disabled={!input.trim() || typing}
-                style={{
-                  width: 32, height: 32, borderRadius: 8, border: "none",
-                  background: S.colors.accent, color: "#fff", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  opacity: input.trim() && !typing ? 1 : 0.3, transition: "opacity .15s",
-                }}
-              >
-                <IconSend size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+        <FixItList
+          selectedProject={selectedProject}
+          onExportPdf={handleExportPDF}
+          isExporting={isExporting}
+        />
       </div>
     </div>
   );

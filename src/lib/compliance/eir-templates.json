@@ -1,0 +1,111 @@
+{
+  "_description": "EIR（雇主信息要求）预置属性模板 — 定义各类构件的必填 IFC 属性",
+  "_reference": "基于 UK BIM Framework 典型 EIR 模板编制",
+
+  "templates": {
+    "default": {
+      "name": "Standard UK EIR Template",
+      "description": "适用于英国标准 BIM 项目的常见必填属性集",
+      "rules": [
+        {
+          "ifc_class": "IfcWall",
+          "required_properties": [
+            { "pset": "Pset_WallCommon", "property": "FireRating", "description": "防火等级（如 REI 60/90/120）" },
+            { "pset": "Pset_WallCommon", "property": "LoadBearing", "description": "是否承重（TRUE/FALSE）" },
+            { "pset": "Pset_WallCommon", "property": "IsExternal", "description": "是否外墙（TRUE/FALSE）" },
+            { "pset": "Pset_WallCommon", "property": "ThermalTransmittance", "description": "热传递系数 U-value" },
+            { "pset": "Pset_WallCommon", "property": "AcousticRating", "description": "隔声等级" },
+            { "pset": "Pset_WallCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcDoor",
+          "required_properties": [
+            { "pset": "Pset_DoorCommon", "property": "FireRating", "description": "防火门等级（如 FD30/FD60）" },
+            { "pset": "Pset_DoorCommon", "property": "IsExternal", "description": "是否外门" },
+            { "pset": "Pset_DoorCommon", "property": "SecurityRating", "description": "安防等级" },
+            { "pset": "Pset_DoorCommon", "property": "AcousticRating", "description": "隔声等级" },
+            { "pset": "Pset_DoorCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcWindow",
+          "required_properties": [
+            { "pset": "Pset_WindowCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_WindowCommon", "property": "IsExternal", "description": "是否外窗" },
+            { "pset": "Pset_WindowCommon", "property": "ThermalTransmittance", "description": "U-value" },
+            { "pset": "Pset_WindowCommon", "property": "GlazingAreaFraction", "description": "玻璃面积比" },
+            { "pset": "Pset_WindowCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcSlab",
+          "required_properties": [
+            { "pset": "Pset_SlabCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_SlabCommon", "property": "LoadBearing", "description": "是否承重" },
+            { "pset": "Pset_SlabCommon", "property": "IsExternal", "description": "是否外露" },
+            { "pset": "Pset_SlabCommon", "property": "AcousticRating", "description": "隔声等级" },
+            { "pset": "Pset_SlabCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcColumn",
+          "required_properties": [
+            { "pset": "Pset_ColumnCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_ColumnCommon", "property": "LoadBearing", "description": "是否承重" },
+            { "pset": "Pset_ColumnCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcBeam",
+          "required_properties": [
+            { "pset": "Pset_BeamCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_BeamCommon", "property": "LoadBearing", "description": "是否承重" },
+            { "pset": "Pset_BeamCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcRoof",
+          "required_properties": [
+            { "pset": "Pset_RoofCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_RoofCommon", "property": "IsExternal", "description": "是否外部" },
+            { "pset": "Pset_RoofCommon", "property": "ThermalTransmittance", "description": "U-value" },
+            { "pset": "Pset_RoofCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcStair",
+          "required_properties": [
+            { "pset": "Pset_StairCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_StairCommon", "property": "FireExit", "description": "是否消防通道" },
+            { "pset": "Pset_StairCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        },
+        {
+          "ifc_class": "IfcSpace",
+          "required_properties": [
+            { "pset": "Pset_SpaceCommon", "property": "Reference", "description": "房间编号" },
+            { "pset": "Pset_SpaceCommon", "property": "Category", "description": "空间类别" },
+            { "pset": "Pset_SpaceOccupancyRequirements", "property": "OccupancyType", "description": "使用类型" },
+            { "pset": "Pset_SpaceOccupancyRequirements", "property": "AreaPerOccupant", "description": "人均面积" }
+          ]
+        },
+        {
+          "ifc_class": "IfcCurtainWall",
+          "required_properties": [
+            { "pset": "Pset_CurtainWallCommon", "property": "FireRating", "description": "防火等级" },
+            { "pset": "Pset_CurtainWallCommon", "property": "IsExternal", "description": "是否外部" },
+            { "pset": "Pset_CurtainWallCommon", "property": "ThermalTransmittance", "description": "U-value" },
+            { "pset": "Pset_CurtainWallCommon", "property": "Reference", "description": "类型参考标识" }
+          ]
+        }
+      ]
+    }
+  },
+
+  "severity_levels": {
+    "ERROR": "必填属性完全缺失 — 将导致 CDE 拒收",
+    "WARNING": "属性存在但值为空或格式异常",
+    "INFO": "建议补全但非强制要求"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "_description": "BS EN ISO 19650-2 UK National Annex 命名规范定义",
+  "_reference": "UK BIM Framework Naming Conventions v3.0",
+
+  "container_naming": {
+    "_description": "容器/文件命名必须包含以下字段，用连字符分隔",
+    "separator": "-",
+    "fields": [
+      {
+        "name": "Project",
+        "position": 1,
+        "description": "项目代码",
+        "regex": "^[A-Z0-9]{2,6}$",
+        "example": "XYZ",
+        "required": true
+      },
+      {
+        "name": "Originator",
+        "position": 2,
+        "description": "创建方代码",
+        "regex": "^[A-Z]{3,6}$",
+        "example": "WSP",
+        "required": true
+      },
+      {
+        "name": "Volume/System",
+        "position": 3,
+        "description": "体量/系统代码",
+        "regex": "^[A-Z0-9]{2,4}$",
+        "example": "ZZ",
+        "required": true
+      },
+      {
+        "name": "Level/Location",
+        "position": 4,
+        "description": "楼层/位置代码",
+        "regex": "^[A-Z0-9]{2,4}$",
+        "example": "01",
+        "required": true
+      },
+      {
+        "name": "Type",
+        "position": 5,
+        "description": "文件类型代码",
+        "regex": "^[A-Z]{2}$",
+        "example": "DR",
+        "required": true,
+        "valid_values": {
+          "AF": "Animation file",
+          "CM": "Combined model",
+          "CR": "Clash rendition",
+          "DR": "Drawing (2D)",
+          "FN": "File note",
+          "HS": "Health and Safety",
+          "IE": "Information exchange file",
+          "M2": "2D model",
+          "M3": "3D model",
+          "MR": "Model rendition",
+          "PM": "Presentation model",
+          "RI": "Request for Information",
+          "RP": "Report",
+          "SA": "Schedule of Accommodation",
+          "SH": "Schedule",
+          "SN": "Specification",
+          "SP": "Specification",
+          "SU": "Survey",
+          "VS": "Visualisation"
+        }
+      },
+      {
+        "name": "Role",
+        "position": 6,
+        "description": "专业角色代码",
+        "regex": "^[A-Z]{1}$",
+        "example": "A",
+        "required": true,
+        "valid_values": {
+          "A": "Architect",
+          "B": "Building Surveyor",
+          "C": "Civil Engineer",
+          "D": "Drainage Engineer",
+          "E": "Electrical Engineer",
+          "F": "Facilities Manager",
+          "G": "Geotechnical Engineer",
+          "H": "Highways Engineer",
+          "I": "Interior Designer",
+          "K": "Client",
+          "L": "Landscape Architect",
+          "M": "Mechanical Engineer",
+          "P": "Public Health Engineer",
+          "Q": "Quantity Surveyor",
+          "S": "Structural Engineer",
+          "T": "Town Planner",
+          "W": "Contractor",
+          "X": "Sub-contractor",
+          "Y": "Specialist Designer",
+          "Z": "General/non-disciplinary"
+        }
+      },
+      {
+        "name": "Number",
+        "position": 7,
+        "description": "序列号",
+        "regex": "^[0-9]{4,5}$",
+        "example": "0001",
+        "required": true
+      }
+    ]
+  },
+
+  "status_codes": {
+    "_description": "信息容器状态码（ISO 19650-2 UK NA Table NA.1）",
+    "work_in_progress": {
+      "S0": "Work in Progress (WIP)",
+      "description": "正在制作中，未发布"
+    },
+    "shared": {
+      "S1": "Coordination",
+      "S2": "Information",
+      "S3": "Review and Comment",
+      "S4": "Stage Approval",
+      "S5": "Suitable for Costing",
+      "S6": "Suitable for Manufacture",
+      "S7": "Suitable for Construction",
+      "description": "已共享至 CDE"
+    },
+    "published": {
+      "A1": "Accepted Stage 1",
+      "A2": "Accepted Stage 2",
+      "A3": "Accepted Stage 3",
+      "A4": "Accepted Stage 4",
+      "A5": "Accepted Stage 5",
+      "A6": "Accepted Stage 6",
+      "AB": "As Built",
+      "description": "已批准发布"
+    },
+    "rejected": {
+      "CR": "Comments Raised",
+      "description": "已审阅但退回修改"
+    },
+    "all_valid": ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "A1", "A2", "A3", "A4", "A5", "A6", "AB", "CR"]
+  },
+
+  "revision": {
+    "_description": "版本号格式",
+    "pre_contract": {
+      "regex": "^P[0-9]{2}(\\.[0-9]{2})?$",
+      "description": "施工前版本，格式 P01 或 P01.01",
+      "examples": ["P01", "P02", "P01.01"]
+    },
+    "post_contract": {
+      "regex": "^C[0-9]{2}(\\.[0-9]{2})?$",
+      "description": "施工后版本，格式 C01 或 C01.01",
+      "examples": ["C01", "C02", "C01.01"]
+    },
+    "valid_regex": "^[PC][0-9]{2}(\\.[0-9]{2})?$"
+  }
+}
