@@ -9,23 +9,23 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/lib/app-context";
 import { S } from "@/lib/constants";
-import type { Project } from "@/lib/types";
 import { BimSummary } from "@/components/bim-summary";
 import { FixItList } from "@/components/fix-it-list";
-import { exportToPDF } from "@/lib/export-pdf";
+import { exportCompliancePDF, captureViewerSnapshot } from "@/lib/export-pdf";
+import type { ComplianceReport } from "@/lib/export-pdf";
 
 type IndexStatus = "idle" | "checking" | "extracting" | "ready" | "error";
 
 export default function ViewerPage() {
-  const { t, selectedProject, setSelectedProject } = useApp();
+  const { selectedProject } = useApp();
   const [indexStatus, setIndexStatus] = useState<IndexStatus>("idle");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [realSpeckleIds, setRealSpeckleIds] = useState<{ streamId?: string; modelId?: string }>({});
   const [parseProgress, setParseProgress] = useState<number>(selectedProject.progress || 0);
   const [isExporting, setIsExporting] = useState(false);
   const progressStartRef = useRef<{ time: number; prog: number } | null>(null);
-  
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // NOTE: Speckle 云端解析引擎支持对这些格式提取构件参数，解析成功后均可进行 AI 审计
   const AI_READY_FORMATS = ["IFC", "RVT", "DWG", "DXF", "3DM", "STEP", "IGES", "E57", "SKP", "NWD", "NWC", "DGN", "SLDPRT", "3DS"];
@@ -118,14 +118,17 @@ export default function ViewerPage() {
   }, [selectedProject.id]);
 
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (report: ComplianceReport, fixSuggestions: Record<string, string>) => {
     setIsExporting(true);
-    // 稍等一小会，确保 UI 更新
-    setTimeout(async () => {
-      const success = await exportToPDF("viewer-container", `${selectedProject.name}-审计报告.pdf`);
-      if (!success) alert("导出失败，请重试");
-      setIsExporting(false);
-    }, 100);
+    const snapshot = await captureViewerSnapshot(iframeRef.current);
+    const success = await exportCompliancePDF({
+      report,
+      projectName: selectedProject.name,
+      fixSuggestions,
+      snapshotDataUrl: snapshot,
+    });
+    if (!success) alert("PDF export failed. Please try again.");
+    setIsExporting(false);
   };
 
 
@@ -141,7 +144,8 @@ export default function ViewerPage() {
         
         {hasRealSpeckle ? (
           <iframe
-            key={viewerUrl} // ID 变动时重载 iframe
+            ref={iframeRef}
+            key={viewerUrl}
             title="BIM 3D Viewer"
             src={viewerUrl}
             style={{ width: "100%", height: "100%", border: "none" }}
@@ -240,17 +244,6 @@ export default function ViewerPage() {
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(0,0,0,.6)", color: "#e2e8f0", backdropFilter: "blur(8px)" }}>
             {selectedProject.name}
           </span>
-          {indexStatus === "ready" && summaryData && (
-            <button onClick={handleExportPDF} disabled={isExporting}
-              style={{
-                padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, 
-                background: S.colors.blue, color: "#fff", cursor: "pointer", border: "none",
-                opacity: isExporting ? 0.6 : 1, transition: "opacity 0.2s"
-              }}
-            >
-              {isExporting ? "导出中..." : "导出报告 (PDF)"}
-            </button>
-          )}
         </div>
       </div>
 

@@ -41,8 +41,7 @@ interface ComplianceReport {
 
 interface FixItListProps {
   selectedProject: Project;
-  /** 父组件的 PDF 导出回调 */
-  onExportPdf?: () => void;
+  onExportPdf?: (report: ComplianceReport, fixSuggestions: Record<string, string>) => void;
   isExporting?: boolean;
 }
 
@@ -425,10 +424,10 @@ export function FixItList({ selectedProject, onExportPdf, isExporting }: FixItLi
           >
             🔄 Re-check
           </button>
-          {onExportPdf && (
+          {!!onExportPdf && (
             <button
               id="btn-export-compliance-pdf"
-              onClick={onExportPdf}
+              onClick={() => report && onExportPdf?.(report, fixSuggestions)}
               disabled={isExporting}
               style={{
                 flex: 1, padding: "10px 0", borderRadius: 8, border: "none",
