@@ -165,10 +165,8 @@ export function FixItList({ selectedProject, onExportPdf, isExporting }: FixItLi
     if (Object.keys(newFixes).length > 0) {
       setFixSuggestions((prev) => ({ ...prev, ...newFixes }));
     }
-      console.error("Fix suggestion error:", err);
-    } finally {
-      setLoadingFixes(false);
-    }
+
+    setLoadingFixes(false);
   }, [report, selectedProject.id]);
 
   // 过滤后的问题列表

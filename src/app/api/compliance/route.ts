@@ -308,9 +308,8 @@ function generateBasicReport(fileName: string, summaryData: SummaryData) {
   const totalErrors = issues.filter((i) => i.severity === "ERROR").length;
   const totalWarnings = issues.filter((i) => i.severity === "WARNING").length;
 
-  // 导入统一的评分函数
-  const { calculateComplianceScore } = await import("@/lib/compliance/compliance-engine");
-  const complianceScore = calculateComplianceScore(totalErrors, totalWarnings);
+  // 统一的评分计算（扣分制：score = max(0, 100 - errors×10 - warnings×1)）
+  const complianceScore = Math.max(0, 100 - totalErrors * 10 - totalWarnings * 1);
 
   return {
     checkedAt: new Date().toISOString(),

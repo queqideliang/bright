@@ -245,7 +245,7 @@ function _drawCover(
   pdf.setFontSize(7);
   pdf.setFont("helvetica", "bold");
   const gradeColor = report.complianceScore >= 90 ? COLOR.green
-    : report.complianceScore >= 70 ? COLOR.blue
+    : report.complianceScore >= 70 ? COLOR.accent
     : report.complianceScore >= 50 ? COLOR.orange : COLOR.red;
   pdf.setTextColor(...gradeColor);
   pdf.text(`(${grade})`, 14 + (W - 28) / 4, scoreY + 39, { align: "center" });
@@ -510,7 +510,7 @@ function _drawIssuesTable(
       // 检查是否需要新页面
       if (currentY > 270) {
         pdf.addPage();
-        currentY = _drawPageHeader(pdf, W, "", pdf.getNumberOfPages(), language) + 4;
+        currentY = _drawPageHeader(pdf, W, "", pdf.getNumberOfPages()) + 4;
       }
 
       // 编号和问题
@@ -525,7 +525,7 @@ function _drawIssuesTable(
       // 修复建议（完整显示，无截断）
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7.5);
-      pdf.setTextColor(...COLOR.text2);
+      pdf.setTextColor(...COLOR.text3);
       const suggestion = fixSuggestions[issue.id];
       const splitSuggestion = pdf.splitTextToSize(suggestion, maxWidth - 8);
       pdf.text(splitSuggestion, 22, currentY);
