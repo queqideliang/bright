@@ -118,36 +118,53 @@ export function FixItList({ selectedProject, onExportPdf, isExporting }: FixItLi
     fetchExisting();
   }, [selectedProject.id]);
 
-  // 为当前可见的错误批量生成 AI 修复建议
+  // 按类别分别生成 AI 修复建议（提升相关性）
   const generateFixes = useCallback(async () => {
     if (!report || report.issues.length === 0) return;
     setLoadingFixes(true);
 
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: `Please generate fix-it suggestions for these ISO 19650 compliance issues:\n${report.issues.slice(0, 15).map((issue, i) => `${i + 1}. [${issue.elementType}] ${issue.message} (field: ${issue.field}${issue.currentValue ? `, current: ${issue.currentValue}` : ""})`).join("\n")}\n\nFor each issue, give a 2-3 sentence actionable fix instruction for a Revit modeller. Number your responses to match.`,
-          projectId: String(selectedProject.id),
-          modelId: String(selectedProject.id),
-        }),
-      });
+    const newFixes: Record<string, string> = {};
 
-      if (resp.ok) {
-        const data = await resp.json();
-        const answer = data.answer || "";
-        // 按编号解析
-        const lines = answer.split(/\n(?=\d+\.)/).filter(Boolean);
-        const newFixes: Record<string, string> = {};
-        lines.forEach((line: string, i: number) => {
-          if (report.issues[i]) {
-            newFixes[report.issues[i].id] = line.replace(/^\d+\.\s*/, "").trim();
-          }
+    // 按类别分别请求 AI
+    const categories: Array<"NAMING" | "UNICLASS" | "EIR"> = ["NAMING", "UNICLASS", "EIR"];
+
+    for (const category of categories) {
+      const categoryIssues = report.issues.filter((issue) => issue.category === category).slice(0, 15);
+      if (categoryIssues.length === 0) continue;
+
+      try {
+        const resp = await fetch("/api/fix-suggestions-by-category", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category,
+            issues: categoryIssues.map((issue) => ({
+              elementId: issue.elementId,
+              elementType: issue.elementType,
+              message: issue.message,
+              field: issue.field,
+              currentValue: issue.currentValue,
+              expectedFormat: issue.expectedFormat,
+            })),
+            projectId: String(selectedProject.id),
+            modelId: String(selectedProject.id),
+          }),
         });
-        setFixSuggestions((prev) => ({ ...prev, ...newFixes }));
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.suggestions && typeof data.suggestions === "object") {
+            Object.assign(newFixes, data.suggestions);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to generate fixes for category ${category}:`, err);
       }
-    } catch (err) {
+    }
+
+    if (Object.keys(newFixes).length > 0) {
+      setFixSuggestions((prev) => ({ ...prev, ...newFixes }));
+    }
       console.error("Fix suggestion error:", err);
     } finally {
       setLoadingFixes(false);

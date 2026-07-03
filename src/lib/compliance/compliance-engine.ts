@@ -211,6 +211,53 @@ export function checkRevision(revision: string): ComplianceIssue[] {
 // ── Uniclass 2015 分类检查 ────────────────────────────────────
 
 /**
+ * 根据 IFC 实体类型推荐 Uniclass 2015 表格区段
+ * 宁可宽泛也不许张冠李戴
+ */
+function getUniclassGuidanceForIfcType(ifcType: string): string {
+  const guidance: Record<string, string> = {
+    // 结构构件 → Ss_20_30 Structural frame
+    "IfcBeam": "Refer to Uniclass Ss_20_30 (Structural frames)",
+    "IfcColumn": "Refer to Uniclass Ss_20_30 (Structural frames)",
+    "IfcMember": "Refer to Uniclass Ss_20_30 (Structural frames)",
+    "IfcPlate": "Refer to Uniclass Ss_20_30 (Structural frames)",
+    "IfcBrace": "Refer to Uniclass Ss_20_30 (Structural frames)",
+
+    // 地基桩 → Ss_20 Substructure
+    "IfcPile": "Refer to Uniclass Ss_20 (Substructure)",
+    "IfcFooting": "Refer to Uniclass Ss_20 (Substructure)",
+
+    // 墙体 → Ss_30 Exterior walls 或 Ss_35 Interior walls
+    "IfcWall": "Refer to Uniclass Ss_30-35 (Walls) or Ss_40 (Roof)",
+    "IfcWallStandardCase": "Refer to Uniclass Ss_30-35 (Walls)",
+
+    // 门窗 → Pr_25 (Doors & windows)
+    "IfcDoor": "Refer to Uniclass Pr_25 (Doors)",
+    "IfcWindow": "Refer to Uniclass Pr_25 (Windows)",
+
+    // 楼板/覆盖物 → Ss_40 Roof
+    "IfcSlab": "Refer to Uniclass Ss_40 (Roof) or Ss_50 (Internal elements)",
+    "IfcRoof": "Refer to Uniclass Ss_40 (Roof)",
+
+    // 栏杆/栏杆扶手 → Ss_51 Balustrades
+    "IfcRailing": "Refer to Uniclass Ss_51 (Balustrades)",
+
+    // 楼梯 → Ss_45 Stairs
+    "IfcStair": "Refer to Uniclass Ss_45 (Stairs)",
+    "IfcStairFlight": "Refer to Uniclass Ss_45 (Stairs)",
+
+    // 家具 → Pr_40 (Furniture)
+    "IfcFurniture": "Refer to Uniclass Pr_40 (Furniture)",
+
+    // 不确定的类型
+    "IfcBuildingElementProxy": "Refer to Uniclass Ss or Pr tables based on element function",
+    "IfcGenericObject": "Refer to Uniclass Ss or Pr tables based on element function",
+  };
+
+  return guidance[ifcType] || "Refer to Uniclass Ss/Pr tables based on IFC entity type and function";
+}
+
+/**
  * 检查构件的 Uniclass 分类码是否有效
  * @param elementId 构件 ID
  * @param elementType IFC 类名
@@ -222,6 +269,7 @@ export function checkUniclass(
   classificationCode: string | null | undefined,
 ): ComplianceIssue[] {
   const issues: ComplianceIssue[] = [];
+  const expectedGuidance = getUniclassGuidanceForIfcType(elementType);
 
   if (!classificationCode) {
     issues.push({
@@ -230,9 +278,9 @@ export function checkUniclass(
       severity: "ERROR",
       elementId,
       elementType,
-      message: `构件缺少 Uniclass 2015 分类码`,
+      message: `Element missing Uniclass 2015 classification code`,
       field: "Classification",
-      expectedFormat: "如 Pr_25_57_17_12（门）",
+      expectedFormat: expectedGuidance,
     });
     return issues;
   }
@@ -246,10 +294,10 @@ export function checkUniclass(
       severity: "ERROR",
       elementId,
       elementType,
-      message: `分类码 "${classificationCode}" 格式不合法`,
+      message: `Classification code "${classificationCode}" format invalid`,
       field: "Classification",
       currentValue: classificationCode,
-      expectedFormat: "必须以 Pr_/Ss_/En_ 等前缀开头，后跟数字编码",
+      expectedFormat: "Must start with Pr_/Ss_/En_ prefix followed by numeric codes",
     });
     return issues;
   }
@@ -261,17 +309,17 @@ export function checkUniclass(
   } as Record<string, string>;
 
   if (!(classificationCode in allCodes)) {
-    // NOTE: 只是警告，因为字典是精简版，未收录不代表一定错
+    // 只是警告，因为字典是精简版
     issues.push({
       id: `uniclass-unknown-${elementId}`,
       category: "UNICLASS",
       severity: "WARNING",
       elementId,
       elementType,
-      message: `分类码 "${classificationCode}" 未在精简字典中找到`,
+      message: `Classification code "${classificationCode}" not found in condensed dictionary`,
       field: "Classification",
       currentValue: classificationCode,
-      expectedFormat: "请确认该编码在 Uniclass 2015 完整表中存在",
+      expectedFormat: expectedGuidance,
     });
   }
 
@@ -344,6 +392,32 @@ export function checkEirProperties(
   return issues;
 }
 
+// ── 评分等级映射 ──────────────────────────────────────────────
+
+export type ComplianceGrade = "Excellent" | "Good" | "Needs Improvement" | "Non-compliant";
+
+/**
+ * 根据分数返回合规等级
+ * 90+: Excellent | 70+: Good | 50+: Needs Improvement | <50: Non-compliant
+ */
+export function getComplianceGrade(score: number): ComplianceGrade {
+  if (score >= 90) return "Excellent";
+  if (score >= 70) return "Good";
+  if (score >= 50) return "Needs Improvement";
+  return "Non-compliant";
+}
+
+/**
+ * 统一的评分计算函数（扣分制）
+ * score = max(0, 100 - errors×10 - warnings×1)
+ * 此函数是唯一的评分来源，Dashboard、审计面板、PDF 都必须引用本函数
+ * @param totalErrors 错误数量
+ * @param totalWarnings 警告数量
+ */
+export function calculateComplianceScore(totalErrors: number, totalWarnings: number): number {
+  return Math.max(0, 100 - totalErrors * 10 - totalWarnings * 1);
+}
+
 // ── 聚合统计 ──────────────────────────────────────────────────
 
 /**
@@ -369,12 +443,10 @@ export function aggregateReport(
   const eir = categorize("EIR");
 
   const totalErrors = naming.errors + uniclass.errors + eir.errors;
-  const totalChecked = totalElements > 0 ? totalElements : 1;
-  // 合规率计算：无错误的构件占比
-  const complianceScore = Math.max(
-    0,
-    Math.round(((totalChecked - totalErrors) / totalChecked) * 100),
-  );
+  const totalWarnings = naming.warnings + uniclass.warnings + eir.warnings;
+
+  // 使用统一的评分函数
+  const complianceScore = calculateComplianceScore(totalErrors, totalWarnings);
 
   return {
     checkedAt: new Date().toISOString(),

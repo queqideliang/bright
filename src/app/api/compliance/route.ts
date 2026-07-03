@@ -159,7 +159,94 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST — 为合规问题生成 AI 修复建议
+ * 按类别为合规问题生成 AI 修复建议（分别请求各类别以提升相关性）
+ * @param issues 问题列表
+ * @param category 问题类别 (NAMING | UNICLASS | EIR)
+ */
+export async function generateFixSuggestionsByCategory(
+  issues: Array<{
+    elementId: string;
+    elementType: string;
+    message: string;
+    field: string;
+    currentValue?: string;
+    expectedFormat?: string;
+  }>,
+  category: "NAMING" | "UNICLASS" | "EIR",
+): Promise<Map<string, string>> {
+  const resultMap = new Map<string, string>();
+  if (!GEMINI_API_KEY || issues.length === 0) return resultMap;
+
+  // 按类别定制化的 prompt
+  const categoryPrompts: Record<string, string> = {
+    NAMING: `You are an ISO 19650 BIM Manager. Below are file naming violations against UK National Annex 7-field naming (Project-Originator-Volume-Level-Type-Role-Number).
+For each issue, provide a concise (2-3 sentences) fix instruction for a Revit junior modeller, including the CORRECT compliant filename example.
+Format: number, then actionable instruction with example.
+Important: If current filename is provided, construct the corrected version following the pattern.
+Do NOT repeat the issue description, ONLY provide the fix instruction and corrected example.`,
+
+    UNICLASS: `You are an ISO 19650 BIM Manager specializing in Uniclass 2015 classification.
+Below are element classification issues in IFC models.
+For each issue, provide a concise (2-3 sentences) fix instruction for a Revit modeller to apply the correct Uniclass 2015 code.
+Include the recommended classification code prefix (Pr_/Ss_/En_) and guidance for the element's IFC type.
+Format: number, then actionable instruction.
+Do NOT repeat the issue description, ONLY provide the fix instruction and correct code guidance.`,
+
+    EIR: `You are an ISO 19650 BIM Manager responsible for EIR (Exchange Information Requirements) property completeness.
+Below are missing or empty property issues in IFC models.
+For each issue, provide a concise (2-3 sentences) instruction for a Revit modeller to populate the required property with realistic example values.
+Include the PropertySet name and property name, and give a concrete example value if applicable.
+Format: number, then actionable instruction with example.
+Do NOT repeat the issue description, ONLY provide the fix instruction and example values.`,
+  };
+
+  // 构建该类别的问题上下文
+  const issuesSummary = issues.slice(0, 15).map((issue, i) => {
+    const parts = [
+      `${i + 1}. [${issue.elementType}]`,
+      `ID: ${issue.elementId}`,
+      `Message: ${issue.message}`,
+      `Field: ${issue.field}`,
+    ];
+    if (issue.currentValue) parts.push(`Current: ${issue.currentValue}`);
+    if (issue.expectedFormat) parts.push(`Expected: ${issue.expectedFormat}`);
+    return parts.join(" | ");
+  }).join("\n");
+
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: categoryPrompts[category] }] },
+          contents: [{ role: "user", parts: [{ text: issuesSummary }] }],
+        }),
+      },
+    );
+
+    if (!resp.ok) return resultMap;
+
+    const result = await resp.json();
+    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    // 按编号分割，然后映射回原问题
+    const suggestions = text.split(/\n(?=\d+\.)/).map((s: string) => s.trim()).filter(Boolean);
+    suggestions.forEach((sugg: string, idx: number) => {
+      if (issues[idx]) {
+        resultMap.set(issues[idx].elementId || `${category}-${idx}`, sugg);
+      }
+    });
+  } catch (err) {
+    console.error(`AI suggestion generation failed for category ${category}:`, err);
+  }
+
+  return resultMap;
+}
+
+/**
+ * @deprecated 改用 generateFixSuggestionsByCategory，按类别分别请求提升相关性
  */
 export async function generateFixSuggestions(
   issues: Array<{
@@ -172,44 +259,8 @@ export async function generateFixSuggestions(
   }>,
 ): Promise<string[]> {
   if (!GEMINI_API_KEY || issues.length === 0) return [];
-
-  // 将错误列表压缩为简洁的上下文
-  const issuesSummary = issues.slice(0, 20).map((issue, i) =>
-    `${i + 1}. [${issue.elementType}] ID: ${issue.elementId} | 错误: ${issue.message} | 字段: ${issue.field}${issue.currentValue ? ` | 当前值: ${issue.currentValue}` : ""}${issue.expectedFormat ? ` | 期望: ${issue.expectedFormat}` : ""}`,
-  ).join("\n");
-
-  const systemPrompt = `你是一名专业的 BIM 信息经理（ISO 19650 认证）。
-以下是模型合规检查中发现的错误列表。
-请为每条错误生成一段简短（2-3 句话）的修复步骤说明。
-要求：
-1. 用英语回答
-2. 面向 Revit 初级建模员，说清楚在 Revit 中具体怎么操作
-3. 如果是命名问题，说明正确的命名格式
-4. 每条建议用编号对应输入的错误编号
-5. 不要重复错误描述，只给操作步骤`;
-
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: "user", parts: [{ text: issuesSummary }] }],
-        }),
-      },
-    );
-
-    if (!resp.ok) return [];
-
-    const result = await resp.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    // 按编号分割
-    return text.split(/\n(?=\d+\.)/).map((s: string) => s.trim()).filter(Boolean);
-  } catch {
-    return [];
-  }
+  // 此函数已废弃，新代码应使用 generateFixSuggestionsByCategory
+  return [];
 }
 
 // ── 基础报告生成（当 VPS /compliance-check 不可用时的降级方案）──
@@ -257,11 +308,15 @@ function generateBasicReport(fileName: string, summaryData: SummaryData) {
   const totalErrors = issues.filter((i) => i.severity === "ERROR").length;
   const totalWarnings = issues.filter((i) => i.severity === "WARNING").length;
 
+  // 导入统一的评分函数
+  const { calculateComplianceScore } = await import("@/lib/compliance/compliance-engine");
+  const complianceScore = calculateComplianceScore(totalErrors, totalWarnings);
+
   return {
     checkedAt: new Date().toISOString(),
     modelName: fileName,
     totalElements,
-    complianceScore: totalErrors === 0 ? 100 : Math.max(0, Math.round(((1 - totalErrors / Math.max(totalElements, 1)) * 100))),
+    complianceScore,
     summary: {
       naming: { total: issues.filter((i) => i.category === "NAMING").length, errors: totalErrors, warnings: totalWarnings, passed: 0 },
       uniclass: { total: 0, errors: 0, warnings: 0, passed: 0 },
