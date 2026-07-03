@@ -13,8 +13,8 @@ import { S } from "@/lib/constants";
 
 /** 重发验证码倒计时（秒） */
 const RESEND_COOLDOWN = 60;
-/** OTP 验证码位数 */
-const OTP_LENGTH = 6;
+/** OTP 验证码位数 — Supabase 默认发送 8 位验证码 */
+const OTP_LENGTH = 8;
 
 const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 13, fontWeight: 600, color: S.colors.text2, marginBottom: 6,
@@ -90,7 +90,7 @@ function OtpInput({
   );
 
   return (
-    <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
       {Array.from({ length: OTP_LENGTH }).map((_, i) => (
         <input
           key={i}
@@ -105,12 +105,12 @@ function OtpInput({
           onKeyDown={(e) => handleKeyDown(i, e)}
           onFocus={(e) => e.target.select()}
           style={{
-            width: 48,
-            height: 56,
+            width: 40,
+            height: 48,
             textAlign: "center",
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: 700,
-            borderRadius: 12,
+            borderRadius: 10,
             border: `2px solid ${value[i] ? S.colors.accent : S.colors.border}`,
             outline: "none",
             fontFamily: "'Inter', monospace",
@@ -226,7 +226,7 @@ export default function LoginPage() {
   const handleVerify = async () => {
     const token = otpValues.join("");
     if (token.length !== OTP_LENGTH) {
-      setError(t.lang === "EN" ? "请输入完整的 6 位验证码" : "Please enter the full 6-digit code");
+      setError(t.lang === "EN" ? "请输入完整的 8 位验证码" : "Please enter the full 8-digit code");
       return;
     }
 

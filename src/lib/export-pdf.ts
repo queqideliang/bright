@@ -5,6 +5,7 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getStandardsByCategory, formatStandardReference } from "./compliance-standards";
 
 // ── 类型定义（与 fix-it-list.tsx 保持一致）──────────────────────
 
@@ -38,6 +39,7 @@ export interface PDFExportOptions {
   projectName: string;
   fixSuggestions: Record<string, string>;
   snapshotDataUrl?: string | null;
+  language?: "zh" | "en";
 }
 
 // ── 品牌色 ────────────────────────────────────────────────────────
@@ -80,7 +82,7 @@ export async function captureViewerSnapshot(iframeEl: HTMLIFrameElement | null):
 // ── 主导出函数 ────────────────────────────────────────────────────
 
 export async function exportCompliancePDF(opts: PDFExportOptions): Promise<boolean> {
-  const { report, projectName, fixSuggestions, snapshotDataUrl } = opts;
+  const { report, projectName, fixSuggestions, snapshotDataUrl, language = "en" } = opts;
 
   try {
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -88,43 +90,53 @@ export async function exportCompliancePDF(opts: PDFExportOptions): Promise<boole
     const H = pdf.internal.pageSize.getHeight();  // 297
 
     // ── 封面 ──────────────────────────────────────────────────────
-    _drawCover(pdf, W, H, report, projectName, snapshotDataUrl ?? null);
+    _drawCover(pdf, W, H, report, projectName, snapshotDataUrl ?? null, language);
 
-    // ── 第 2 页：摘要 + 分类汇总表 ────────────────────────────────
+    // ── 第 2 页：摘要 + 分类汇总表 + 规范说明 ─────────────────────
     pdf.addPage();
-    let y = _drawPageHeader(pdf, W, "Compliance Summary", 2);
-    y = _drawSummaryCards(pdf, W, y, report);
-    y = _drawSummaryTable(pdf, W, y, report);
+    let y = _drawPageHeader(pdf, W, language === "zh" ? "合规检查摘要" : "Compliance Summary", 2, language);
+    y = _drawSummaryCards(pdf, W, y, report, language);
+    y = _drawSummaryTable(pdf, W, y, report, language);
 
-    // ── 按类别逐表输出问题 ────────────────────────────────────────
+    // ── 规范参考页 ───────────────────────────────────────────────
+    pdf.addPage();
+    y = _drawPageHeader(pdf, W, language === "zh" ? "适用规范" : "Applicable Standards", pdf.getNumberOfPages(), language);
+    _drawStandardsReference(pdf, W, y, report, language);
+
+    // ── 按类别逐表输出问题（含规范引用）──────────────────────────
     const categories: Array<"NAMING" | "UNICLASS" | "EIR"> = ["NAMING", "UNICLASS", "EIR"];
     for (const cat of categories) {
       const catIssues = report.issues.filter((i) => i.category === cat);
       if (catIssues.length === 0) continue;
 
       pdf.addPage();
-      y = _drawPageHeader(pdf, W, CATEGORY_LABEL[cat], pdf.getNumberOfPages());
-      y = _drawIssuesTable(pdf, W, y, catIssues, fixSuggestions);
+      const catLabel = language === "zh"
+        ? { NAMING: "命名规范检查", UNICLASS: "Uniclass 2015 分类", EIR: "EIR 属性完整性" }[cat]
+        : CATEGORY_LABEL[cat];
+      y = _drawPageHeader(pdf, W, catLabel || "", pdf.getNumberOfPages(), language);
+      y = _drawIssuesTable(pdf, W, y, catIssues, fixSuggestions, cat, language);
     }
 
     // ── AI 修复建议汇总页（如果有）────────────────────────────────
     const issuesWithFix = report.issues.filter((i) => fixSuggestions[i.id]);
     if (issuesWithFix.length > 0) {
       pdf.addPage();
-      y = _drawPageHeader(pdf, W, "AI Fix Suggestions / AI 修复建议", pdf.getNumberOfPages());
-      _drawFixSuggestions(pdf, W, y, issuesWithFix, fixSuggestions);
+      const fixTitle = language === "zh" ? "AI 修复建议" : "AI Fix Suggestions";
+      y = _drawPageHeader(pdf, W, fixTitle, pdf.getNumberOfPages(), language);
+      _drawFixSuggestions(pdf, W, y, issuesWithFix, fixSuggestions, language);
     }
 
     // ── 页脚页码 ──────────────────────────────────────────────────
     const totalPages = pdf.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
       pdf.setPage(p);
-      _drawFooter(pdf, W, H, p, totalPages);
+      _drawFooter(pdf, W, H, p, totalPages, language);
     }
 
     const safeName = projectName.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
     const dateStr = new Date().toISOString().slice(0, 10);
-    pdf.save(`${safeName}_ISO19650_Report_${dateStr}.pdf`);
+    const langSuffix = language === "zh" ? "_CN" : "";
+    pdf.save(`${safeName}_ISO19650_Report_${dateStr}${langSuffix}.pdf`);
     return true;
   } catch (err) {
     console.error("PDF export failed:", err);
@@ -138,6 +150,7 @@ function _drawCover(
   pdf: jsPDF, W: number, H: number,
   report: ComplianceReport, projectName: string,
   snapshot: string | null,
+  language: "zh" | "en" = "en",
 ) {
   // 顶部紫色色块
   pdf.setFillColor(...COLOR.accent);
@@ -150,17 +163,19 @@ function _drawCover(
   pdf.text("BrightSun BIM", 14, 18);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
-  pdf.text("ISO 19650 Compliance Platform", 14, 25);
+  const tagline = language === "zh" ? "ISO 19650 信息合规体检平台" : "ISO 19650 Compliance Platform";
+  pdf.text(tagline, 14, 25);
 
   // 生成日期（右上）
   pdf.setFontSize(8);
-  pdf.text(new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }), W - 14, 18, { align: "right" });
+  const dateLocale = language === "zh" ? "zh-CN" : "en-GB";
+  pdf.text(new Date().toLocaleDateString(dateLocale, { day: "2-digit", month: "long", year: "numeric" }), W - 14, 18, { align: "right" });
 
   // 主标题
   pdf.setFontSize(22);
   pdf.setFont("helvetica", "bold");
-  pdf.text("BIM Compliance", 14, 42);
-  pdf.text("Audit Report", 14, 51);
+  const title = language === "zh" ? "BIM 合规审计报告" : "BIM Compliance Audit Report";
+  pdf.text(title, 14, 46);
 
   // 3D 快照或占位区
   const snapY = 58;
@@ -184,7 +199,8 @@ function _drawCover(
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);
   pdf.setTextColor(...COLOR.text3);
-  pdf.text("PROJECT / 项目", 20, infoY + 8);
+  const projLabel = language === "zh" ? "项目" : "PROJECT";
+  pdf.text(projLabel, 20, infoY + 8);
   pdf.setFontSize(11);
   pdf.setTextColor(...COLOR.text);
   pdf.text(_truncate(projectName, 45), 20, infoY + 16);
@@ -192,7 +208,8 @@ function _drawCover(
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...COLOR.text3);
-  pdf.text("MODEL / 模型", 20, infoY + 24);
+  const modelLabel = language === "zh" ? "模型" : "MODEL";
+  pdf.text(modelLabel, 20, infoY + 24);
   pdf.setFontSize(9);
   pdf.setTextColor(...COLOR.text);
   pdf.text(_truncate(report.modelName, 55), 20, infoY + 30);
@@ -211,7 +228,8 @@ function _drawCover(
   pdf.text(`${report.complianceScore}%`, 14 + (W - 28) / 4, scoreY + 24, { align: "center" });
   pdf.setFontSize(8);
   pdf.setFont("helvetica", "normal");
-  pdf.text("COMPLIANCE SCORE / 合规率", 14 + (W - 28) / 4, scoreY + 34, { align: "center" });
+  const scoreLabel = language === "zh" ? "合规率" : "COMPLIANCE SCORE";
+  pdf.text(scoreLabel, 14 + (W - 28) / 4, scoreY + 34, { align: "center" });
 
   // 总元素数卡
   pdf.setFillColor(...COLOR.border);
@@ -223,20 +241,23 @@ function _drawCover(
   pdf.setFontSize(8);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(...COLOR.text3);
-  pdf.text("TOTAL ELEMENTS / 构件总数", 14 + (W - 28) * 3 / 4 + 4, scoreY + 34, { align: "center" });
+  const elementsLabel = language === "zh" ? "构件总数" : "TOTAL ELEMENTS";
+  pdf.text(elementsLabel, 14 + (W - 28) * 3 / 4 + 4, scoreY + 34, { align: "center" });
 }
 
 // ── 页眉 ──────────────────────────────────────────────────────────
 
-function _drawPageHeader(pdf: jsPDF, W: number, title: string, _page: number): number {
+function _drawPageHeader(pdf: jsPDF, W: number, title: string, _page: number, language: "zh" | "en" = "en"): number {
   pdf.setFillColor(...COLOR.accent);
   pdf.rect(0, 0, W, 14, "F");
   pdf.setTextColor(...COLOR.white);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
-  pdf.text("BrightSun BIM · ISO 19650 Compliance Report", 14, 9.5);
+  const headerText = "BrightSun BIM · ISO 19650 Compliance Report";
+  pdf.text(headerText, 14, 9.5);
   pdf.setFont("helvetica", "normal");
-  pdf.text(new Date().toLocaleDateString("en-GB"), W - 14, 9.5, { align: "right" });
+  const dateLocale = language === "zh" ? "zh-CN" : "en-GB";
+  pdf.text(new Date().toLocaleDateString(dateLocale), W - 14, 9.5, { align: "right" });
 
   pdf.setTextColor(...COLOR.text);
   pdf.setFont("helvetica", "bold");
@@ -250,14 +271,18 @@ function _drawPageHeader(pdf: jsPDF, W: number, title: string, _page: number): n
 
 // ── 摘要数字卡 ────────────────────────────────────────────────────
 
-function _drawSummaryCards(pdf: jsPDF, W: number, y: number, report: ComplianceReport): number {
+function _drawSummaryCards(pdf: jsPDF, W: number, y: number, report: ComplianceReport, language: "zh" | "en" = "en"): number {
   const totalErrors   = report.summary.naming.errors + report.summary.uniclass.errors + report.summary.eir.errors;
   const totalWarnings = report.summary.naming.warnings + report.summary.uniclass.warnings + report.summary.eir.warnings;
 
+  const labels = language === "zh"
+    ? { errors: "错误", warnings: "警告", score: "合规率" }
+    : { errors: "Errors", warnings: "Warnings", score: "Compliance" };
+
   const cards = [
-    { label: "Errors / 错误",   value: String(totalErrors),   color: COLOR.red },
-    { label: "Warnings / 警告", value: String(totalWarnings), color: COLOR.orange },
-    { label: "Compliance Score / 合规率", value: `${report.complianceScore}%`,
+    { label: labels.errors,   value: String(totalErrors),   color: COLOR.red },
+    { label: labels.warnings, value: String(totalWarnings), color: COLOR.orange },
+    { label: labels.score, value: `${report.complianceScore}%`,
       color: report.complianceScore >= 80 ? COLOR.green : report.complianceScore >= 50 ? COLOR.orange : COLOR.red },
   ];
 
@@ -283,20 +308,29 @@ function _drawSummaryCards(pdf: jsPDF, W: number, y: number, report: ComplianceR
 
 // ── 汇总表 ────────────────────────────────────────────────────────
 
-function _drawSummaryTable(pdf: jsPDF, W: number, y: number, report: ComplianceReport): number {
+function _drawSummaryTable(pdf: jsPDF, W: number, y: number, report: ComplianceReport, language: "zh" | "en" = "en"): number {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...COLOR.text);
-  pdf.text("Check Category Summary / 各类别汇总", 14, y);
+  const summaryTitle = language === "zh" ? "各类别汇总" : "Check Category Summary";
+  pdf.text(summaryTitle, 14, y);
   y += 5;
+
+  const headers = language === "zh"
+    ? ["类别", "错误", "警告", "通过", "总计"]
+    : ["Category", "Errors", "Warnings", "Passed", "Total"];
+
+  const catLabels = language === "zh"
+    ? ["命名规范", "Uniclass 2015 分类", "EIR 属性完整性"]
+    : ["Naming Convention", "Uniclass 2015 Classification", "EIR Property Completeness"];
 
   autoTable(pdf, {
     startY: y,
-    head: [["Category / 类别", "Errors / 错误", "Warnings / 警告", "Passed / 通过", "Total / 总计"]],
+    head: [headers],
     body: [
-      ["Naming Convention / 命名规范", report.summary.naming.errors, report.summary.naming.warnings, report.summary.naming.passed, report.summary.naming.total],
-      ["Uniclass 2015 Classification", report.summary.uniclass.errors, report.summary.uniclass.warnings, report.summary.uniclass.passed, report.summary.uniclass.total],
-      ["EIR Property Completeness", report.summary.eir.errors, report.summary.eir.warnings, report.summary.eir.passed, report.summary.eir.total],
+      [catLabels[0], report.summary.naming.errors, report.summary.naming.warnings, report.summary.naming.passed, report.summary.naming.total],
+      [catLabels[1], report.summary.uniclass.errors, report.summary.uniclass.warnings, report.summary.uniclass.passed, report.summary.uniclass.total],
+      [catLabels[2], report.summary.eir.errors, report.summary.eir.warnings, report.summary.eir.passed, report.summary.eir.total],
     ],
     theme: "grid",
     headStyles: { fillColor: COLOR.accent, textColor: COLOR.white, fontStyle: "bold", fontSize: 8 },
@@ -315,17 +349,114 @@ function _drawSummaryTable(pdf: jsPDF, W: number, y: number, report: ComplianceR
   return (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 }
 
+// ── 规范参考页 ────────────────────────────────────────────────────
+
+function _drawStandardsReference(
+  pdf: jsPDF, W: number, y: number,
+  report: ComplianceReport, language: "zh" | "en" = "en",
+): number {
+  const categories: Array<"NAMING" | "UNICLASS" | "EIR"> = ["NAMING", "UNICLASS", "EIR"];
+
+  for (const cat of categories) {
+    if (y > 250) {
+      pdf.addPage();
+      y = _drawPageHeader(pdf, W, language === "zh" ? "适用规范(续)" : "Applicable Standards (Cont'd)", pdf.getNumberOfPages(), language);
+    }
+
+    const standards = getStandardsByCategory(cat, language);
+    if (standards.length === 0) continue;
+
+    // 类别标题
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOR.accent);
+    const catTitle = language === "zh"
+      ? { NAMING: "1. 命名规范标准", UNICLASS: "2. Uniclass 分类标准", EIR: "3. EIR 属性标准" }[cat]
+      : { NAMING: "1. Naming Standards", UNICLASS: "2. Uniclass Standards", EIR: "3. EIR Standards" }[cat];
+    pdf.text(catTitle, 14, y);
+    y += 6;
+
+    for (const std of standards) {
+      // 标准名称和引用
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...COLOR.text);
+      pdf.text(std.name[language], 14, y);
+      y += 4;
+
+      // 引用
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...COLOR.text3);
+      pdf.text(`Reference: ${std.reference[language]}`, 14, y);
+      y += 4;
+
+      // 描述（自动换行）
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...COLOR.text);
+      const desc = std.description[language];
+      const splitDesc = pdf.splitTextToSize(desc, W - 28);
+      pdf.text(splitDesc, 14, y);
+      y += splitDesc.length * 3.5 + 3;
+
+      // 相关条款
+      if (std.relatedClauses.length > 0) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(...COLOR.text3);
+        const clauseLabel = language === "zh" ? "相关条款:" : "Related clauses:";
+        pdf.text(clauseLabel, 14, y);
+        y += 3;
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        const clauseText = std.relatedClauses.join(" | ");
+        const splitClauses = pdf.splitTextToSize(clauseText, W - 28);
+        pdf.text(splitClauses, 14, y);
+        y += splitClauses.length * 2.5 + 4;
+      }
+    }
+
+    y += 4;
+  }
+
+  return y;
+}
+
 // ── 问题明细表 ────────────────────────────────────────────────────
 
 function _drawIssuesTable(
   pdf: jsPDF, W: number, y: number,
   issues: ComplianceIssue[], fixSuggestions: Record<string, string>,
+  category: "NAMING" | "UNICLASS" | "EIR", language: "zh" | "en" = "en",
 ): number {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(...COLOR.text);
-  pdf.text(`Issues Found / 发现问题 (${issues.length})`, 14, y);
-  y += 5;
+  const issueTitle = language === "zh" ? `发现问题 (${issues.length})` : `Issues Found (${issues.length})`;
+  pdf.text(issueTitle, 14, y);
+
+  // 显示该类别适用的规范
+  const standards = getStandardsByCategory(category, language);
+  if (standards.length > 0) {
+    y += 4;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...COLOR.text3);
+    const stdLabel = language === "zh" ? "适用标准:" : "Applicable standards:";
+    const stdNames = standards.map(s => s.name[language]).join(" | ");
+    const stdText = `${stdLabel} ${stdNames}`;
+    const splitStd = pdf.splitTextToSize(stdText, W - 28);
+    pdf.text(splitStd, 14, y);
+    y += splitStd.length * 2.5 + 1;
+  }
+
+  y += 2;
+
+  const headers = language === "zh"
+    ? ["严重级别", "构件类型", "字段", "问题描述", "当前值", "期望格式"]
+    : ["Severity", "Type", "Field", "Issue", "Current", "Expected"];
 
   const rows = issues.map((issue) => [
     issue.severity,
@@ -338,7 +469,7 @@ function _drawIssuesTable(
 
   autoTable(pdf, {
     startY: y,
-    head: [["Severity", "Type / 类型", "Field / 字段", "Issue / 问题", "Current / 当前", "Expected / 期望"]],
+    head: [headers],
     body: rows,
     theme: "striped",
     headStyles: { fillColor: COLOR.text, textColor: COLOR.white, fontStyle: "bold", fontSize: 7 },
@@ -370,11 +501,16 @@ function _drawIssuesTable(
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
     pdf.setTextColor(...COLOR.accent);
-    pdf.text("AI Fix Suggestions for this category / 本类别 AI 修复建议", 14, afterY);
+    const fixTitle = language === "zh" ? "本类别 AI 修复建议" : "AI Fix Suggestions for this category";
+    pdf.text(fixTitle, 14, afterY);
+
+    const fixHeaders = language === "zh"
+      ? ["#", "问题描述", "修复建议"]
+      : ["#", "Issue", "Fix Suggestion"];
 
     autoTable(pdf, {
       startY: afterY + 4,
-      head: [["#", "Issue / 问题", "Fix Suggestion / 修复建议"]],
+      head: [fixHeaders],
       body: withFix.map((issue, idx) => [
         idx + 1,
         _truncate(issue.message, 40),
@@ -401,23 +537,32 @@ function _drawIssuesTable(
 function _drawFixSuggestions(
   pdf: jsPDF, W: number, y: number,
   issues: ComplianceIssue[], fixSuggestions: Record<string, string>,
+  language: "zh" | "en" = "en",
 ) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(...COLOR.text3);
-  pdf.text(
-    "The following AI-generated fix steps are tailored for Revit modellers. / 以下为 AI 针对 Revit 建模员生成的操作步骤。",
-    14, y,
-  );
+  const fixDesc = language === "zh"
+    ? "以下为 AI 针对 Revit 建模员生成的操作步骤。"
+    : "The following AI-generated fix steps are tailored for Revit modellers.";
+  pdf.text(fixDesc, 14, y);
   y += 8;
+
+  const catLabels = language === "zh"
+    ? { NAMING: "命名规范", UNICLASS: "Uniclass 分类", EIR: "EIR 属性" }
+    : { NAMING: "Naming", UNICLASS: "Uniclass", EIR: "EIR" };
+
+  const headers = language === "zh"
+    ? ["#", "级别", "类别", "问题 (字段)", "AI 修复建议"]
+    : ["#", "Severity", "Category", "Issue (field)", "AI Fix Suggestion"];
 
   autoTable(pdf, {
     startY: y,
-    head: [["#", "Severity", "Category", "Issue / 问题 (field)", "AI Fix Suggestion / AI 修复建议"]],
+    head: [headers],
     body: issues.map((issue, idx) => [
       idx + 1,
       issue.severity,
-      CATEGORY_LABEL[issue.category] ?? issue.category,
+      catLabels[issue.category] ?? issue.category,
       `${_truncate(issue.message, 42)}\n[${issue.field}]`,
       _truncate(fixSuggestions[issue.id], 90),
     ]),
@@ -446,14 +591,15 @@ function _drawFixSuggestions(
 
 // ── 页脚 ──────────────────────────────────────────────────────────
 
-function _drawFooter(pdf: jsPDF, W: number, H: number, page: number, total: number) {
+function _drawFooter(pdf: jsPDF, W: number, H: number, page: number, total: number, language: "zh" | "en" = "en") {
   pdf.setFillColor(...COLOR.border);
   pdf.rect(0, H - 10, W, 10, "F");
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7);
   pdf.setTextColor(...COLOR.text3);
-  pdf.text("BrightSun BIM · ISO 19650 Compliance Platform · bim-ai.netlify.app", 14, H - 3.5);
-  pdf.text(`Page ${page} of ${total}`, W - 14, H - 3.5, { align: "right" });
+  pdf.text("BrightSun BIM · ISO 19650 Compliance Platform · brightsunliang.top", 14, H - 3.5);
+  const pageLabel = language === "zh" ? `第 ${page} 页，共 ${total} 页` : `Page ${page} of ${total}`;
+  pdf.text(pageLabel, W - 14, H - 3.5, { align: "right" });
 }
 
 // ── 工具函数 ──────────────────────────────────────────────────────

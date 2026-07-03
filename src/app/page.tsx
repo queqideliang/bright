@@ -21,8 +21,9 @@ const btnGhost: React.CSSProperties = {
 };
 
 export default function LandingPage() {
-  const { t, toggleLang } = useApp();
+  const { t, toggleLang, lang } = useApp();
   const router = useRouter();
+  const language = lang;
 
   const goLogin = () => router.push("/login");
   // NOTE: Demo 按钮直接跳转到 viewer，middleware 会检测未登录并重定向到 login
@@ -81,7 +82,7 @@ export default function LandingPage() {
             border: "1px solid rgba(99,102,241,.2)",
           }}
         >
-          ✨ ISO 19650 · UK BIM Framework
+          {language === "zh" ? "✨ 基于 BS EN ISO 19650-2 + Uniclass 2015" : "✨ Built on BS EN ISO 19650-2 + Uniclass 2015"}
         </div>
 
         <h1
@@ -90,7 +91,7 @@ export default function LandingPage() {
             letterSpacing: "-0.03em", margin: "0 0 20px",
           }}
         >
-          {t.hero1}
+          {language === "zh" ? "ISO 19650 合规检查" : "Catch ISO 19650 Errors"}
           <br />
           <span
             style={{
@@ -99,28 +100,30 @@ export default function LandingPage() {
               WebkitTextFillColor: "transparent",
             }}
           >
-            {t.hero2}
+            {language === "zh" ? "上传前的最后一道闸" : "Before Your CDE Rejects It"}
           </span>
         </h1>
 
         <p style={{ fontSize: 18, color: "#94a3b8", lineHeight: 1.7, maxWidth: 560, margin: "0 auto 40px" }}>
-          {t.heroSub}
+          {language === "zh"
+            ? "上传 IFC，5 分钟内获得合规检查报告和修复指南。无需配置规则，拖拽即用。"
+            : "Drop an IFC file. Get a plain-English fix-it report in 5 minutes. No setup needed."}
         </p>
 
-        <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
           <button
             id="btn-cta-primary"
             onClick={goLogin}
             style={{ ...btnPrimary, padding: "14px 32px", fontSize: 15, background: "#6366f1", borderRadius: 12 }}
           >
-            {t.cta}
+            {language === "zh" ? "立即开始" : "Get Started"}
           </button>
           <button
-            id="btn-cta-demo"
-            onClick={goDemo}
+            id="btn-cta-trial"
+            onClick={() => router.push("/demo")}
             style={{ ...btnGhost, padding: "14px 32px", fontSize: 15, color: "#c7d2fe", borderColor: "rgba(199,210,254,.3)", borderRadius: 12 }}
           >
-            {t.ctaDemo}
+            {language === "zh" ? "免费试用（5分钟）" : "Free Trial (5 min)"}
           </button>
         </div>
       </section>
@@ -134,11 +137,16 @@ export default function LandingPage() {
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20,
         }}
       >
-        {([
-          [t.feat1t, t.feat1d, "📋"],
-          [t.feat2t, t.feat2d, "🏷️"],
-          [t.feat3t, t.feat3d, "📝"],
-          [t.feat4t, t.feat4d, "🔧"],
+        {(language === "zh" ? [
+          ["命名规范检查", "UK National Annex 7段式命名、状态码(S0-S7)、版本号自动校验", "📋"],
+          ["Uniclass 2015 分类", "验证每个构件的分类码是否有效且符合标准", "🏷️"],
+          ["EIR 属性完整性", "检查防火等级、荷载等级、材料信息等关键参数", "📝"],
+          ["AI 修复建议", "自动生成面向 Revit 建模员的操作步骤，初级人员也能看懂", "🔧"],
+        ] : [
+          ["Naming Compliance", "UK National Annex 7-field naming, status codes (S0-S7), revision validation", "📋"],
+          ["Uniclass 2015 Check", "Verify every element has a valid Uniclass code", "🏷️"],
+          ["EIR Completeness", "Check fire ratings, load classes, and required properties", "📝"],
+          ["AI Fix Guide", "AI generates step-by-step Revit instructions for junior modellers", "🔧"],
         ] as [string, string, string][]).map(([title, desc, em], i) => (
           <div
             key={i}

@@ -7,6 +7,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/app-context";
 import { S } from "@/lib/constants";
 import { BimSummary } from "@/components/bim-summary";
@@ -17,11 +18,19 @@ import type { ComplianceReport } from "@/lib/export-pdf";
 type IndexStatus = "idle" | "checking" | "extracting" | "ready" | "error";
 
 export default function ViewerPage() {
-  const { selectedProject } = useApp();
+  const { selectedProject, lang } = useApp();
+  const router = useRouter();
   const [indexStatus, setIndexStatus] = useState<IndexStatus>("idle");
   const [summaryData, setSummaryData] = useState<any>(null);
   const [realSpeckleIds, setRealSpeckleIds] = useState<{ streamId?: string; modelId?: string }>({});
-  const [parseProgress, setParseProgress] = useState<number>(selectedProject.progress || 0);
+  const [parseProgress, setParseProgress] = useState<number>(selectedProject?.progress || 0);
+
+  // 防护：如果没有选中项目，重定向回 dashboard
+  useEffect(() => {
+    if (!selectedProject || !selectedProject.id) {
+      router.replace("/dashboard");
+    }
+  }, [selectedProject, router]);
   const [isExporting, setIsExporting] = useState(false);
   const progressStartRef = useRef<{ time: number; prog: number } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -126,8 +135,9 @@ export default function ViewerPage() {
       projectName: selectedProject.name,
       fixSuggestions,
       snapshotDataUrl: snapshot,
+      language: lang,
     });
-    if (!success) alert("PDF export failed. Please try again.");
+    if (!success) alert(lang === "zh" ? "PDF 导出失败，请重试。" : "PDF export failed. Please try again.");
     setIsExporting(false);
   };
 
