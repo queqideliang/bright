@@ -38,14 +38,14 @@ export default function ViewerPage() {
 
   // NOTE: Speckle 云端解析引擎支持对这些格式提取构件参数，解析成功后均可进行 AI 审计
   const AI_READY_FORMATS = ["IFC", "RVT", "DWG", "DXF", "3DM", "STEP", "IGES", "E57", "SKP", "NWD", "NWC", "DGN", "SLDPRT", "3DS"];
-  const isAnalyzable = AI_READY_FORMATS.includes(selectedProject.format);
+  const isAnalyzable = AI_READY_FORMATS.includes(selectedProject?.format);
 
   // 优先级：1. 轮询到的真实 ID > 2. 项目自带 ID > 3. 环境变量/演示 ID
-  const speckleProjectId = realSpeckleIds.streamId || selectedProject.speckleStreamId || process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID || "";
-  const speckleModelId = realSpeckleIds.modelId || selectedProject.speckleModelId || process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID || "";
-  
+  const speckleProjectId = realSpeckleIds.streamId || selectedProject?.speckleStreamId || process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID || "";
+  const speckleModelId = realSpeckleIds.modelId || selectedProject?.speckleModelId || process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID || "";
+
   // NOTE: 仅当有真实的流 ID 时（非演示 ID 且项目非演示项目），才生成 Viewer URL
-  const hasRealSpeckle = !!(realSpeckleIds.streamId || selectedProject.speckleStreamId);
+  const hasRealSpeckle = !!(realSpeckleIds.streamId || selectedProject?.speckleStreamId);
   const viewerUrl = `https://app.speckle.systems/projects/${speckleProjectId}/models/${speckleModelId}#embed=%7B%22isEnabled%22%3Atrue%7D`;
 
   // NOTE: AI 聊天功能已重构为 Fix-it List 合规检查面板
@@ -124,7 +124,7 @@ export default function ViewerPage() {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProject.id]);
+  }, [selectedProject?.id]);
 
 
   const handleExportPDF = async (report: ComplianceReport, fixSuggestions: Record<string, string>) => {
@@ -141,7 +141,8 @@ export default function ViewerPage() {
     setIsExporting(false);
   };
 
-
+  // 未选中项目时不渲染内容（上方 useEffect 会重定向回 dashboard），避免访问 undefined 崩溃
+  if (!selectedProject?.id) return null;
 
   return (
     <div id="viewer-container" style={{
