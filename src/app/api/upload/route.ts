@@ -67,7 +67,9 @@ export async function POST(request: NextRequest) {
   const format = EXT_TO_FORMAT[ext];
 
   // ── 4. 上传到 Supabase Storage ───────────────────────────────
-  const storagePath = `${user.id}/${Date.now()}_${file.name}`;
+  // NOTE: Supabase Storage 对象键只接受 ASCII 安全字符，中文/特殊字符文件名会导致 400
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_{2,}/g, "_").slice(-100);
+  const storagePath = `${user.id}/${Date.now()}_${safeName}`;
   const bytes = await file.arrayBuffer();
 
   const { error: storageErr } = await supabase.storage

@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `不支持 .${ext} 格式` }, { status: 400 });
   }
 
-  const storagePath = `${user.id}/${Date.now()}_${fileName}`;
+  // NOTE: Supabase Storage 对象键只接受 ASCII 安全字符，中文/特殊字符文件名会导致直传 400
+  // 存储键做净化，原始文件名由 upload-complete 写入数据库用于展示
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_{2,}/g, "_").slice(-100);
+  const storagePath = `${user.id}/${Date.now()}_${safeName}`;
   const format = EXT_TO_FORMAT[ext];
 
   // 生成签名上传 URL（用 service role，绕过 RLS）
