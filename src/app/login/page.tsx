@@ -14,7 +14,7 @@ import { S } from "@/lib/constants";
 /** 重发验证码倒计时（秒） */
 const RESEND_COOLDOWN = 60;
 /** OTP 验证码位数 — Supabase 默认发送 8 位验证码 */
-const OTP_LENGTH = 8;
+const OTP_LENGTH = 6;
 
 const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 13, fontWeight: 600, color: S.colors.text2, marginBottom: 6,
@@ -226,7 +226,7 @@ export default function LoginPage() {
   const handleVerify = async () => {
     const token = otpValues.join("");
     if (token.length !== OTP_LENGTH) {
-      setError(t.lang === "EN" ? "请输入完整的 8 位验证码" : "Please enter the full 8-digit code");
+      setError(t.lang === "EN" ? "请输入完整的 6 位验证码" : "Please enter the full 6-digit code");
       return;
     }
 
