@@ -1,0 +1,64 @@
+# ================================================================
+#  每日健康检查 + Supabase 保活
+#  1. Supabase 免费版连续 7 天无活动会自动暂停 → 每天查询一次数据库保持活跃
+#  2. 同时检查网站和 VPS，任一失败则本次运行失败，GitHub 自动发邮件通知
+# ================================================================
+
+name: Health Check
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 每天 UTC 01:00（北京时间 09:00）
+  workflow_dispatch:       # 支持在 GitHub Actions 页面手动运行
+
+permissions:
+  actions: write           # 用于重新启用本工作流（见最后一步）
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://momqjkkblcdpxmnhelya.supabase.co
+      # NOTE: publishable key 本就公开在前端代码中，不属于机密
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_REaye51UOddK4AOfe2u_ow_TAnH-j_X
+      SITE_URL: https://bim-ai.netlify.app
+      VPS_URL: http://23.226.135.237:8080
+    steps:
+      - name: 检查 Supabase / 网站 / VPS
+        run: |
+          failed=0
+
+          # 返回 HTTP 状态码，网络不通时返回 000
+          probe() { curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$@" || true; }
+
+          # 真实查询一次数据库，保证 Supabase 判定项目处于活跃状态
+          code=$(probe "$SUPABASE_URL/rest/v1/models?select=id&limit=1" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+          echo "Supabase 数据库: HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase 不可用（可能已被暂停），请登录 https://supabase.com/dashboard 恢复项目"
+            failed=1
+          fi
+
+          code=$(probe "$SITE_URL/login")
+          echo "网站: HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::网站 $SITE_URL 无法访问，请检查 Netlify 部署"
+            failed=1
+          fi
+
+          code=$(probe "$VPS_URL/health")
+          echo "VPS 后端: HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::VPS 后端无响应，上传解析和 AI 审计将不可用，请重启 VPS 服务"
+            failed=1
+          fi
+
+          exit $failed
+
+      # NOTE: 公开仓库 60 天无提交时，GitHub 会自动停用定时任务，导致保活静默失效
+      # 每次运行时重新启用本工作流，重置该计时
+      - name: 防止定时任务被 GitHub 自动停用
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/health-check.yml/enable"
