@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateFixSuggestionsByCategory } from "@/app/api/compliance/route";
+import { generateFixSuggestionsByCategory } from "@/lib/compliance/ai-suggestions";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();

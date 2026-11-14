@@ -39,6 +39,14 @@
     X-Powered-By = "BIM·AI Platform"
 
 # ── 静态资源长缓存 ──────────────────────────────────────────────
+# Modern Chrome/Edge enforce this viewer-only CSP instead of the legacy global
+# X-Frame-Options. Different header names avoid relying on duplicate-key merge
+# behavior; all other routes retain DENY. This is an HTTP header, not HTML meta.
+[[headers]]
+  for = "/bim-viewer/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors 'self'"
+
 [[headers]]
   for = "/_next/static/*"
   [headers.values]

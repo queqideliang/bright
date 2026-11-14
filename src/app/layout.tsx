@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/lib/app-context";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "亮阳 BIM·AI — 智能建筑审计平台 | brightsunliang.top",
-  description: "上传 IFC / RVT / FBX，10秒获得专业 AI BIM 审计报告。自动检查防火等级、LEED 合规、参数缺失。",
-  keywords: "BIM 审计, AI 建筑, IFC, Revit, Speckle, LEED",
+  title: "BRIGHT VISION — 模型查看与审核",
+  description: "在同一工作台打开 IFC 和 BRIGHT VISION ZIP，浏览模型与构件属性，检查信息、定位问题并导出审核结果。",
+  keywords: "BIM 模型审核, IFC, Revit, BRIGHT VISION, 模型查看",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
-      <body className={inter.className} style={{ margin: 0, padding: 0 }}>
+      <body style={{ margin: 0, padding: 0, fontFamily: "system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif" }}>
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

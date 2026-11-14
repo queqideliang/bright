@@ -19,6 +19,8 @@
 
 # production
 /build
+/public/bim-viewer/
+/public/.bim-viewer-stage-*/
 
 # misc
 .DS_Store

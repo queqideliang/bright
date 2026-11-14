@@ -1,179 +1,30 @@
-// ================================================================
-//  落地页 (Landing Page) — 完整迁移自 bim-ai-platform.jsx Landing()
-// ================================================================
+import Link from "next/link";
 
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/app-context";
-
-// 共享按钮样式对象（与原 JSX 保持一致）
-const btnPrimary: React.CSSProperties = {
-  padding: "8px 18px", borderRadius: 8, border: "none",
-  background: "#6366f1", color: "#fff", fontSize: 13,
-  fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-};
-const btnGhost: React.CSSProperties = {
-  padding: "6px 14px", borderRadius: 8,
-  border: "1px solid rgba(255,255,255,.2)",
-  background: "transparent", fontSize: 12,
-  fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
-};
-
+const features = [
+  ["01", "打开模型", "免登录打开 IFC / BV ZIP，模型文件在当前设备解析。"],
+  ["02", "查看与核对", "浏览楼层、构件与属性，筛选、隔离、测量和剖切。"],
+  ["03", "信息审核", "配置项目必填字段，检查名称与分类信息，查看问题对应的构件。"],
+  ["04", "导出结果", "导出审核清单、JSON 数据或通过浏览器打印保存 PDF。"],
+];
 export default function LandingPage() {
-  const { t, toggleLang, lang } = useApp();
-  const router = useRouter();
-  const language = lang;
-
-  const goLogin = () => router.push("/login");
-  // NOTE: Demo 按钮直接跳转到 viewer，middleware 会检测未登录并重定向到 login
-  const goDemo = () => router.push("/viewer");
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)",
-        color: "#fff",
-        fontFamily: "'Inter',-apple-system,system-ui,sans-serif",
-      }}
-    >
-      {/* ── 顶部导航栏 ── */}
-      <nav
-        style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "20px 48px", maxWidth: 1200, margin: "0 auto",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 800, fontSize: 14,
-            }}
-          >
-            B
-          </div>
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: "-0.02em" }}>{t.brand}</span>
-        </div>
-
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button id="btn-lang-landing" onClick={toggleLang} style={{ ...btnGhost, color: "#a5b4fc", borderColor: "rgba(165,180,252,.3)" }}>
-            {t.lang}
-          </button>
-          <button id="btn-login-nav" onClick={goLogin} style={{ ...btnGhost, color: "#c7d2fe", borderColor: "rgba(199,210,254,.2)" }}>
-            {t.login}
-          </button>
-          <button id="btn-signup-nav" onClick={goLogin} style={{ ...btnPrimary, background: "#6366f1" }}>
-            {t.signup}
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Hero 区域 ── */}
-      <section style={{ textAlign: "center", padding: "100px 24px 60px", maxWidth: 800, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "inline-block", padding: "6px 16px", borderRadius: 20,
-            background: "rgba(99,102,241,.15)", color: "#a5b4fc",
-            fontSize: 13, fontWeight: 600, marginBottom: 24,
-            border: "1px solid rgba(99,102,241,.2)",
-          }}
-        >
-          {language === "zh" ? "✨ 基于 BS EN ISO 19650-2 + Uniclass 2015" : "✨ Built on BS EN ISO 19650-2 + Uniclass 2015"}
-        </div>
-
-        <h1
-          style={{
-            fontSize: 56, fontWeight: 800, lineHeight: 1.1,
-            letterSpacing: "-0.03em", margin: "0 0 20px",
-          }}
-        >
-          {language === "zh" ? "ISO 19650 合规检查" : "Catch ISO 19650 Errors"}
-          <br />
-          <span
-            style={{
-              background: "linear-gradient(135deg, #818cf8, #c084fc, #f472b6)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            {language === "zh" ? "上传前的最后一道闸" : "Before Your CDE Rejects It"}
-          </span>
-        </h1>
-
-        <p style={{ fontSize: 18, color: "#94a3b8", lineHeight: 1.7, maxWidth: 560, margin: "0 auto 40px" }}>
-          {language === "zh"
-            ? "上传 IFC，5 分钟内获得合规检查报告和修复指南。无需配置规则，拖拽即用。"
-            : "Drop an IFC file. Get a plain-English fix-it report in 5 minutes. No setup needed."}
-        </p>
-
-        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <button
-            id="btn-cta-primary"
-            onClick={goLogin}
-            style={{ ...btnPrimary, padding: "14px 32px", fontSize: 15, background: "#6366f1", borderRadius: 12 }}
-          >
-            {language === "zh" ? "立即开始" : "Get Started"}
-          </button>
-          <button
-            id="btn-cta-trial"
-            onClick={() => router.push("/demo")}
-            style={{ ...btnGhost, padding: "14px 32px", fontSize: 15, color: "#c7d2fe", borderColor: "rgba(199,210,254,.3)", borderRadius: 12 }}
-          >
-            {language === "zh" ? "免费试用（5分钟）" : "Free Trial (5 min)"}
-          </button>
-        </div>
-      </section>
-
-
-
-      {/* ── 核心功能卡片 ── */}
-      <div
-        style={{
-          maxWidth: 1000, margin: "0 auto", padding: "0 24px 100px",
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20,
-        }}
-      >
-        {(language === "zh" ? [
-          ["命名规范检查", "UK National Annex 7段式命名、状态码(S0-S7)、版本号自动校验", "📋"],
-          ["Uniclass 2015 分类", "验证每个构件的分类码是否有效且符合标准", "🏷️"],
-          ["EIR 属性完整性", "检查防火等级、荷载等级、材料信息等关键参数", "📝"],
-          ["AI 修复建议", "自动生成面向 Revit 建模员的操作步骤，初级人员也能看懂", "🔧"],
-        ] : [
-          ["Naming Compliance", "UK National Annex 7-field naming, status codes (S0-S7), revision validation", "📋"],
-          ["Uniclass 2015 Check", "Verify every element has a valid Uniclass code", "🏷️"],
-          ["EIR Completeness", "Check fire ratings, load classes, and required properties", "📝"],
-          ["AI Fix Guide", "AI generates step-by-step Revit instructions for junior modellers", "🔧"],
-        ] as [string, string, string][]).map(([title, desc, em], i) => (
-          <div
-            key={i}
-            style={{
-              padding: 28, borderRadius: 16,
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div style={{ fontSize: 28, marginBottom: 12 }}>{em}</div>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{title}</div>
-            <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>{desc}</div>
-          </div>
-        ))}
+  return <main style={{ minHeight: "100vh", background: "#f4f7fb", color: "#172b45", fontFamily: "system-ui,sans-serif" }}>
+    <nav style={{ maxWidth: 1120, margin: "auto", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
+      <strong style={{ letterSpacing: ".1em" }}>BRIGHT VISION</strong>
+      <Link href="/dashboard" style={{ color: "#185d98", fontSize: 14 }}>账号与已有项目</Link>
+    </nav>
+    <section style={{ maxWidth: 1120, margin: "auto", padding: "72px 24px 56px" }}>
+      <p style={{ color: "#1b7796", letterSpacing: ".16em", fontSize: 13 }}>模型查看 · 信息审核 · 问题定位</p>
+      <h1 style={{ fontSize: "clamp(34px,6vw,64px)", lineHeight: 1.18, letterSpacing: "-.04em", maxWidth: 850, margin: "20px 0" }}>看清模型，<br />也看清需要完善的信息。</h1>
+      <p style={{ fontSize: 18, lineHeight: 1.9, color: "#52677c", maxWidth: 720 }}>IFC 模型审核与 BRIGHT VISION 在线看模，合并为一个工作台。从打开文件到查看属性、检查问题和导出结果，在同一个页面完成。</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
+        <Link href="/workbench" style={{ background: "#173f63", color: "white", borderRadius: 10, padding: "14px 24px", textDecoration: "none", fontWeight: 650 }}>进入模型工作台 ↗</Link>
+        <Link href="/dashboard" style={{ background: "white", color: "#173f63", border: "1px solid #cddbe8", borderRadius: 10, padding: "14px 24px", textDecoration: "none" }}>登录查看已有项目</Link>
       </div>
-
-      {/* ── 页脚 ── */}
-      <footer
-        style={{
-          textAlign: "center", padding: "32px 24px",
-          borderTop: "1px solid rgba(255,255,255,.06)",
-          color: "#475569", fontSize: 13,
-        }}
-      >
-        © 2026 brightsunliang.top · {t.tagSub}
-      </footer>
-    </div>
-  );
+      <p style={{ fontSize: 13, color: "#64798c", marginTop: 20 }}>支持 IFC2X3 / IFC4 STEP 与 BV ZIP · 本机文件体验无需账号</p>
+    </section>
+    <section style={{ maxWidth: 1120, margin: "auto", padding: "0 24px 56px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 16 }}>
+      {features.map(([number, title, body]) => <article key={number} style={{ padding: 26, background: "white", border: "1px solid #dce5ec", borderRadius: 16 }}><span style={{ color: "#7891a6", fontSize: 13 }}>{number}</span><h2 style={{ fontSize: 20, marginTop: 24 }}>{title}</h2><p style={{ fontSize: 14, lineHeight: 1.8, color: "#52677c" }}>{body}</p></article>)}
+    </section>
+    <footer style={{ maxWidth: 1120, margin: "auto", padding: "0 24px 36px", color: "#64798c", fontSize: 13, lineHeight: 1.8 }}>审核按所选规则检查已加载信息，结果包含检查范围。免登录工作台的文件在当前设备处理，不上传保存。原有账号与历史项目入口保留；新工作台的云端保存尚未启用。</footer>
+  </main>;
 }

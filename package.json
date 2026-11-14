@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "viewer:sync": "node scripts/sync-bim-viewer.mjs",
+    "prebuild": "npm run viewer:sync -- --production",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

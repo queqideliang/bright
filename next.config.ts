@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      { source: "/:path*", headers: [{ key: "X-Frame-Options", value: "DENY" }] },
+      // Only the same-origin viewer is embeddable; account and API routes retain their protections.
+      { source: "/bim-viewer/:path*", headers: [
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "no-referrer" },
+      ] },
+    ];
+  },
   // NOTE: 允许从 Supabase Storage 和 Speckle 加载图片资源
   images: {
     remotePatterns: [

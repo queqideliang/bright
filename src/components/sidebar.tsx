@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 ];
 
 export function Sidebar() {
-  const { t, logout } = useApp();
+  const { t, lang, logout } = useApp();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -61,6 +61,22 @@ export function Sidebar() {
 
       {/* 导航菜单 */}
       <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+        <button
+          id="nav-workbench"
+          onClick={() => router.push("/workbench")}
+          style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 12px", borderRadius: 8,
+            border: "none", cursor: "pointer",
+            fontSize: 13, fontWeight: 600,
+            width: "100%", textAlign: "left",
+            background: S.colors.accentLight, color: S.colors.accent,
+            fontFamily: "inherit", marginBottom: 8,
+          }}
+        >
+          <IconViewer size={18} />
+          {lang === "zh" ? "本机模型查看与审核" : "Local model workbench"}
+        </button>
         {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
           const isActive = pathname.startsWith(href);
           return (
