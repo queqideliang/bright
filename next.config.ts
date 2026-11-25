@@ -5,11 +5,14 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: [{ key: "X-Frame-Options", value: "DENY" }] },
       // Only the same-origin viewer is embeddable; account and API routes retain their protections.
-      { source: "/bim-viewer/:path*", headers: [
+      { source: "/:viewer(bim-viewer|cloud-model-viewer)/:path*", headers: [
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
         { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "no-referrer" },
+      ] },
+      { source: "/cloud-model-viewer/cad-worker.js", headers: [
+        { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'self'; frame-ancestors 'none'" },
       ] },
     ];
   },

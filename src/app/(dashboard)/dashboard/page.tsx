@@ -38,7 +38,7 @@ function mapSupabaseToProject(sp: SupabaseProject): Project[] {
 }
 
 export default function DashboardPage() {
-  const { t, setShowUpload, setSelectedProject, dashboardRefreshKey, refreshDashboard } = useApp();
+  const { t, setSelectedProject, dashboardRefreshKey, refreshDashboard } = useApp();
   const router = useRouter();
 
   const [projects, setProjects] = useState<Project[]>(DEMO_PROJECTS);
@@ -146,7 +146,7 @@ export default function DashboardPage() {
   };
 
   const quickActions = [
-    { label: t.dash_upload, Icon: IconUpload, color: S.colors.accent, bg: S.colors.accentLight, action: () => setShowUpload(true) },
+    { label: t.dash_upload, Icon: IconUpload, color: S.colors.accent, bg: S.colors.accentLight, action: () => router.push("/models") },
     { label: t.dash_audit, Icon: IconAudit, color: S.colors.green, bg: S.colors.greenBg, action: null },
     { label: t.dash_export, Icon: IconExport, color: S.colors.blue, bg: S.colors.blueBg, action: null },
   ] as const;

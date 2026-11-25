@@ -97,7 +97,7 @@ export function Sidebar() {
               }}
             >
               <Icon size={18} />
-              {t[labelKey]}
+              {labelKey ? t[labelKey] : (t.lang === "EN" ? "我的模型库" : "My models")}
             </button>
           );
         })}

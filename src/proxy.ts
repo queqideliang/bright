@@ -8,6 +8,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!bim-viewer/|api/upload|api/upload-to-speckle|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!bim-viewer/|cloud-model-viewer/|api/library(?:/|$)|api/upload|api/upload-to-speckle|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -162,6 +162,11 @@ function useResendCountdown() {
   return { countdown, startCountdown, canResend: countdown === 0 };
 }
 
+function destinationAfterLogin() {
+  const target = new URLSearchParams(window.location.search).get("next") ?? "";
+  return /^\/models(?:\/[0-9a-f-]{36})?$/.test(target) ? target : "/dashboard";
+}
+
 export default function LoginPage() {
   const { t, login, loginWithGoogle, signup, verifyOTP, toggleLang } = useApp();
   const router = useRouter();
@@ -211,7 +216,7 @@ export default function LoginPage() {
         if (result.error) {
           setError(result.error);
         } else {
-          router.push("/dashboard");
+          router.push(destinationAfterLogin());
         }
       }
     } finally {
@@ -239,7 +244,7 @@ export default function LoginPage() {
         setError(t.lang === "EN" ? "验证码无效或已过期" : "Invalid or expired verification code");
         setOtpValues(Array(OTP_LENGTH).fill(""));
       } else {
-        router.push("/dashboard");
+        router.push(destinationAfterLogin());
       }
     } finally {
       setVerifying(false);

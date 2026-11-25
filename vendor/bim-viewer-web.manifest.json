@@ -4,9 +4,9 @@
   "generator": "web/scripts/sync-bim-viewer.mjs",
   "archive": {
     "file": "bim-viewer-web.json.gz",
-    "bytes": 2036057,
-    "sha256": "c7a3285608f38203d99aee0625750aa621805deeca8b9089aa9712db4c656520",
-    "uncompressedBytes": 8880047
+    "bytes": 2036752,
+    "sha256": "27f911afa05771de48613e6703296729f2d7a0b250c044a63d0d53d3ddbb4929",
+    "uncompressedBytes": 8881283
   },
   "files": [
     {
@@ -30,9 +30,9 @@
       "sha256": "1af1877090c3dd44f7e7853fd768de4ebe22086392cc5aec7c33347d130bdcf5"
     },
     {
-      "path": "assets/index-BiJT3iGV.js",
-      "bytes": 821784,
-      "sha256": "a97ce11fb2c32b18c9d7f3352d84376bc0ea4a92226f358e312f937bae27711d"
+      "path": "assets/index-DS33wjM7.js",
+      "bytes": 822711,
+      "sha256": "aa442300c0dfbddd671923bb3cc0cdc7e34e3d9f029cf88a0a7a49536b4d0a47"
     },
     {
       "path": "assets/index-bCOBak0y.css",
@@ -52,7 +52,7 @@
     {
       "path": "index.html",
       "bytes": 954,
-      "sha256": "1d539e8df82b5b0cdbd984bfa42ecb1f581213fc254da5a50c50bff6c2d7b084"
+      "sha256": "58350341f9a61539ebc911390838d68ad487b6a358c2136fb12059bd1c883694"
     },
     {
       "path": "licenses/LICENSE",
@@ -174,7 +174,7 @@
       "tools/bim-viewer/src/vim-export-ui.ts": "61ff7bf995753720cb572712d1e7133c507480a53cb7de45f9e412bd31e114e2",
       "tools/bim-viewer/src/vim-export.css": "e489887d9f905591cff3f9ae4c264fa70b887bf2ca2bc33e70c9cca179ce8ef3",
       "tools/bim-viewer/src/vim-export.worker.ts": "95a714b501ca9afde13dbcf0df64c9a6155929ee0158b23fc0a2f2bbf7d42613",
-      "tools/bim-viewer/src/web-model-loader.ts": "e68efa81f61ac214c0b92e430e075a04a929532d58473dc2546b1689db34d3d4",
+      "tools/bim-viewer/src/web-model-loader.ts": "f1b79ea6c1ae2bc53cd4cdfc87b7fabd0c0fae32d6893a4521dc6d9fb253eb21",
       "tools/bim-viewer/tsconfig.json": "1e7b02e332322287734f990056853fe346fb4053daff4cb8612af4471d24b781",
       "tools/bim-viewer/vite.config.ts": "48524cc169dcd5e08b155b50746694fd448afce9c3afbcd22b2bd347db1d8363",
       "web/src/lib/bv/contracts.ts": "4c5a7fa62665b6a1a23c343815a8a279d159100ba91d376639ab9496d9b8986a"

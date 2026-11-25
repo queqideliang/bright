@@ -1,0 +1,21 @@
+.bv-library { min-height: 100dvh; background: #f3f6fa; color: #152c40; font-family: Inter, "Microsoft YaHei", system-ui, sans-serif; }
+.bv-bar { min-height: 56px; padding: 12px clamp(16px,4vw,54px); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #cdd9e1; background: white; }
+.bv-bar a { color: #164f74; font-weight: 650; text-decoration: none; }
+.bv-bar strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bv-shelf { max-width: 1024px; margin: 0 auto; padding: clamp(28px,5vw,64px) 20px; }
+.bv-shelf h1 { font-size: clamp(32px,5vw,46px); line-height: 1.2; margin: 0 0 12px; }
+.bv-shelf h2 { font-size: 21px; margin: 36px 0 14px; }
+.bv-shelf p, .bv-upload span { color: #475f70; line-height: 1.7; }
+.bv-upload { padding: 28px; margin: 24px 0; background: white; border: 1px dashed #7e9cae; border-radius: 12px; }
+.bv-upload.dragging { border-color: #135d83; background: #e8f4fa; }
+.bv-primary { background: #184c6e; color: white; font-weight: 650; padding: 12px 21px; border: none; border-radius: 7px; font-size: 16px; cursor: pointer; }
+.bv-primary:disabled { opacity: .65; }.bv-upload span { display: inline-block; margin: 8px 14px; }
+.bv-upload details { margin-top: 15px; font-size: 14px; color: #3d586a; }.bv-upload summary { cursor: pointer; }
+.bv-files { margin: 0; padding: 0; list-style: none; }.bv-files li { border-bottom: 1px solid #d2dce3; }
+.bv-files a { display: flex; align-items: center; gap: 18px; padding: 16px 4px; text-decoration: none; color: #204862; }
+.bv-files strong { flex: 1; overflow-wrap: anywhere; }.bv-files span { font-size: 14px; white-space: nowrap; }
+.bv-model { height: 100dvh; min-height: 380px; display: flex; flex-direction: column; }
+.bv-stage { position: relative; flex: 1; min-height: 0; display: flex; }
+.bv-frame { width: 100%; min-height: 0; flex: 1; border: 0; background: #edf2f5; }
+.bv-feedback { position: absolute; left: 16px; top: 16px; max-width: calc(100% - 32px); background: white; padding: 12px 18px; border-radius: 8px; color: #203d4e; box-shadow: 0 2px 10px #112a3420; }
+.bv-library .bv-error { color: #982e24; }.bv-error button { cursor: pointer; text-decoration: underline; }
