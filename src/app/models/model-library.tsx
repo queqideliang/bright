@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useApp } from '@/lib/app-context';
 import { libraryExtensions, libraryFormats, libraryMaxBytes, modelExtension, type LibraryItem } from '@/lib/model-library/formats';
 
 function displaySize(bytes: number) {
@@ -31,6 +32,7 @@ function sendFile(url: string, file: File, progress: (percent: number) => void) 
 
 export function ModelLibrary() {
   const router = useRouter();
+  const { loading: sessionLoading } = useApp();
   const input = useRef<HTMLInputElement>(null);
   const uploadLock = useRef(false);
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -96,8 +98,8 @@ export function ModelLibrary() {
       <h1>我的模型库</h1><p>上传后直接查看。用同一账号登录，可以继续打开已保存的模型。</p>
       <div className={'bv-upload' + (dragging ? ' dragging' : '')} onDragOver={e => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void upload(e.dataTransfer.files[0]); }}>
-        <button className="bv-primary" disabled={!!progress} onClick={() => input.current?.click()}>上传模型</button>
-        <input ref={input} id="library-file" type="file" hidden accept={libraryExtensions.map(ext => '.' + ext).join(',')} onChange={e => void upload(e.target.files?.[0])} />
+        <button className="bv-primary" disabled={sessionLoading || !!progress} onClick={() => input.current?.click()}>上传模型</button>
+        <input ref={input} id="library-file" type="file" hidden disabled={sessionLoading || !!progress} accept={libraryExtensions.map(ext => '.' + ext).join(',')} onChange={e => void upload(e.target.files?.[0])} />
         <span>或拖入一个文件 · 单个文件最大 50 MiB</span>
         <details><summary>支持的格式与文件要求</summary><p>{libraryFormats.map(([name]) => name).join('、')}。glTF 请内嵌资源或导出 GLB。OBJ 单文件可查看几何。Revit 模型可先导出 IFC 或 BV ZIP。</p></details>
       </div>

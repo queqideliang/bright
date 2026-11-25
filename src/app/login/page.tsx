@@ -168,7 +168,7 @@ function destinationAfterLogin() {
 }
 
 export default function LoginPage() {
-  const { t, login, loginWithGoogle, signup, verifyOTP, toggleLang } = useApp();
+  const { t, loading: sessionLoading, login, loginWithGoogle, signup, verifyOTP, toggleLang } = useApp();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -459,6 +459,7 @@ export default function LoginPage() {
                   <label style={labelStyle}>{t.lang === "EN" ? "姓名" : "Name"}</label>
                   <input
                     id="input-name"
+                    disabled={sessionLoading}
                     style={inputStyle}
                     type="text"
                     value={name}
@@ -472,6 +473,7 @@ export default function LoginPage() {
               <label style={labelStyle}>{t.email}</label>
               <input
                 id="input-email"
+                disabled={sessionLoading}
                 style={inputStyle}
                 type="email"
                 value={email}
@@ -482,6 +484,7 @@ export default function LoginPage() {
               <label style={{ ...labelStyle, marginTop: 14 }}>{t.password}</label>
               <input
                 id="input-password"
+                disabled={sessionLoading}
                 style={inputStyle}
                 type="password"
                 value={password}
@@ -493,19 +496,19 @@ export default function LoginPage() {
               <button
                 id="btn-login-submit"
                 type="submit"
-                disabled={loading}
+                disabled={loading || sessionLoading}
                 style={{
                   width: "100%", padding: "12px 0", marginTop: 20,
                   borderRadius: 10, border: "none",
-                  background: loading ? S.colors.text3 : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  background: loading || sessionLoading ? S.colors.text3 : "linear-gradient(135deg, #6366f1, #8b5cf6)",
                   color: "#fff",
                   fontWeight: 600, fontSize: 14,
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: loading || sessionLoading ? "not-allowed" : "pointer",
                   fontFamily: "inherit",
                   transition: "all 0.2s ease",
                 }}
               >
-                {loading ? "..." : isSignup ? t.signup : t.login}
+                {sessionLoading ? (t.lang === "EN" ? "正在准备登录…" : "Preparing sign-in…") : loading ? "..." : isSignup ? t.signup : t.login}
               </button>
             </form>
 
@@ -524,6 +527,7 @@ export default function LoginPage() {
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 id="btn-login-google"
+                disabled={sessionLoading}
                 onClick={handleGoogleLogin}
                 style={{
                   ...btnGhost, flex: 1, padding: "10px 0", borderRadius: 10,
