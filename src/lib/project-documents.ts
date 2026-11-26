@@ -4,8 +4,20 @@ export interface Passage { location: string; text: string }
 export interface ProjectDocument { id: string; owner: string; title: string; passages: Passage[] }
 const maxText = 1_200_000;
 
-export async function readProjectFile(file: File): Promise<Passage[]> {
+export async function readProjectFile(file: File, options: { allowCloudOcr?: boolean; signal?: AbortSignal } = {}): Promise<Passage[]> {
   if (file.size > 12 * 1024 * 1024) throw new Error('单份资料最大 12 MiB，请拆分文件。');
+  if (/\.(xlsx?|csv|tsv)$/i.test(file.name)) return (await import('./project-spreadsheet')).readSpreadsheet(file);
+  if (/\.pptx$/i.test(file.name)) {
+    const { readPresentation } = await import('./project-presentation');
+    if (!options.allowCloudOcr) return readPresentation(file);
+    const { readProjectImage } = await import('./project-image');
+    return readPresentation(file, { readImage: image => readProjectImage(image, options.signal) });
+  }
+  if (/\.ppt$/i.test(file.name)) return (await import('./project-legacy-ppt')).readLegacyPresentation(file);
+  if (/\.(jpe?g|png|webp)$/i.test(file.name)) {
+    if (!options.allowCloudOcr) throw new Error('请先同意将这张图片发送给 AI 识别。');
+    return (await import('./project-image')).readProjectImage(file, options.signal);
+  }
   const passages: Passage[] = [];
   let length = 0;
   function add(location: string, source: string) {
@@ -48,32 +60,12 @@ export async function readProjectFile(file: File): Promise<Passage[]> {
     });
   } else if (/\.(txt|md)$/i.test(file.name)) {
     (await file.text()).split(/\r?\n/).forEach((line, i) => add('第 ' + (i + 1) + ' 行', line));
-  } else throw new Error('请选择 PDF、DOCX、TXT 或 Markdown 文件。');
+  } else throw new Error('请选择支持的文档、表格、演示文稿或图片。');
   if (!passages.length) throw new Error('未提取到正文。扫描件请先识别文字后再添加。');
   return passages;
 }
 
-function terms(value: string) {
-  const words = value.toLowerCase().match(/[a-z0-9_]+|[\p{Script=Han}]+/gu) || [];
-  return new Set(words.flatMap(word => {
-    if (word.length < 2 || !/\p{Script=Han}/u.test(word)) return [word];
-    return Array.from({length: word.length - 1}, (_, i) => word.slice(i, i + 2));
-  }));
-}
-
-export function findPassages(docs: ProjectDocument[], question: string) {
-  const query = terms(question);
-  const rows = docs.flatMap(doc => doc.passages.map(p => ({title: doc.title, ...p})));
-  const frequency = new Map<string, number>();
-  const ranked = rows.map(row => {
-    const content = (row.title + ' ' + row.text).toLowerCase();
-    const hits = [...query].filter(term => content.includes(term));
-    for (const term of hits) frequency.set(term, (frequency.get(term) ?? 0) + 1);
-    return {row, hits};
-  }).map(({row, hits}) => ({ row, score: hits.reduce((n, term) => n + 1 + Math.log((rows.length + 1) / (frequency.get(term)! + 1)), 0) }));
-  const ordered = ranked.sort((a,b) => b.score - a.score);
-  return ordered.filter(item => rows.length <= 6 || item.score > 0).slice(0,6).map(({row},i) => ({id:'S' + (i + 1), ...row}));
-}
+export { findPassages } from './project-document-search.ts';
 
 async function documentStore<T>(mode: IDBTransactionMode, operation: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {

@@ -3,7 +3,7 @@ import { registerHooks } from 'node:module';
 import test from 'node:test';
 
 // This suite runs in a dedicated Node test process, with no network or credential access.
-const auth = 'export async function createClient(){return {auth:{getUser:async()=>({data:{user:globalThis.testAccount}})}}}';
+const auth = 'export async function createClient(){return {auth:{getUser:async()=>({data:{user:globalThis.testAccount}})}}} export function createAdminClient(){throw Error("unexpected storage call")}';
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === '@/lib/supabase/server') {

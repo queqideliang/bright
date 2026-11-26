@@ -76,7 +76,7 @@ export function prepareTask(body: unknown): Task {
 const instructions: Record<Mode, string> = {
   plan: '将问题转换为一个只读模型查询，返回 JSON {"plan":{"intent":"components"}}。支持 intent: components（构件计数或列表）、quantities（原始量）、properties（查询一个属性）、missing（查询一个缺失属性）。可选 level 和 category 各为一个精确名称，优先匹配输入列出的值。properties、missing 必须给 property（参数名或 属性组.参数名）；quantities 可带 metric（length、area、volume），缺省查询三项。保留用户限定的范围，切勿因缺少字段而放宽范围。无法完整表达、问题有歧义、需要地区计价扣减或与模型无关时，返回 {"unsupported":true}。',
   answer: '仅依据本次只读查询的 result 用中文简洁回答。返回 JSON {"answer":"..."}。如状态为 unavailable 或 clarify，说明欠缺的数据或需澄清的范围。只使用结果中有的数值、单位和构件编号，不重新估算，不混淆原始量和规则工程量，保留缺项、抽样和截断说明。引用可用的楼层、类别或构件编号，方便复核。',
-  documents: '用中文回答项目资料问题。所有事实仅取自 documents 的正文，紧随每项事实用对应的 [S1] 等编号标注出处。不同版本有冲突时分别注明。资料足够时返回 JSON {"supported":true,"answer":"... [S1]"}；没有依据或片段不够时返回 {"supported":false}。禁止编造条款、页码、数值或新的引用编号。',
+  documents: '用中文回答项目资料问题。每项事实紧随提供的 [S1] 等出处。只使用输入片段中的文字、数值、单位和位置；表格核对工作表、行列和列标题，幻灯片核对页码，图片识别中看不清的内容不能推测。只收到检索片段，在缺少原表合计或完整范围依据时禁止把样本推算为全表总量。分别标明不同资料的冲突。资料足够时返回 JSON {"supported":true,"answer":"... [S1]"}；没有依据时返回 {"supported":false}。',
 };
 
 export function systemInstruction(mode: Mode) {

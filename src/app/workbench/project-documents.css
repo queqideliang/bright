@@ -47,3 +47,15 @@
 .bv-doc-answer p { white-space: pre-wrap; overflow-wrap: anywhere; color: #172b45; }
 .bv-doc-answer button { padding: .05rem .28rem; font-size: .83rem; margin-inline: .13rem; color: #075f7c; background: #e9f6fb; }
 .bv-doc-answer article { padding: .75rem; margin-top: .65rem; background: #f2f6f8; border-left: 3px solid #7aabb9; overflow-wrap: anywhere; }
+.bv-doc-sharing { border-top: 1px solid #d6e0e7; margin-top: 1rem; padding-top: .75rem; }
+.bv-doc-sharing summary { cursor: pointer; font-weight: 600; }
+.bv-doc-sharing label { display: grid; gap: .25rem; font-size: .88rem; }
+.bv-doc-sharing input[type="text"] { min-width: 0; width: 100%; box-sizing: border-box; padding: .45rem; font: inherit; color: inherit; border: 1px solid #a6b7c3; border-radius: 6px; }
+.bv-doc-sharing > button, .bv-doc-sharing section { margin-top: .6rem; }
+.bv-doc-sharing li { overflow-wrap: anywhere; }
+.bv-doc-sharing li div { display: flex; flex-shrink: 0; gap: .25rem; }
+.bv-share-link { display: flex; align-items: flex-end; gap: .5rem; margin-top: .65rem; }
+.bv-share-link label { flex: 1; min-width: 0; }
+.bv-doc-ocr { padding: .75rem; background: #f4f7f8; border-radius: 6px; }
+.bv-doc-ocr label { display: flex; align-items: flex-start; gap: .4rem; font-size: .88rem; line-height: 1.6; }
+.bv-doc-ocr > div { margin-top: .5rem; }
