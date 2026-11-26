@@ -164,7 +164,7 @@ function useResendCountdown() {
 
 function destinationAfterLogin() {
   const target = new URLSearchParams(window.location.search).get("next") ?? "";
-  return /^\/models(?:\/[0-9a-f-]{36})?$/.test(target) ? target : "/dashboard";
+  return target === "/workbench" || /^\/models(?:\/[0-9a-f-]{36})?$/.test(target) ? target : "/dashboard";
 }
 
 export default function LoginPage() {

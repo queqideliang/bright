@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFile, mkdir, readFile } from 'node:fs/promises';
+import { cp, copyFile, mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { build } from 'esbuild';
@@ -8,6 +8,11 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const modules = path.join(root, 'node_modules');
 const target = path.join(root, 'public/cloud-model-viewer/vendor');
 await mkdir(target, { recursive: true });
+const pdf = path.join(target, 'pdf');
+await mkdir(pdf, { recursive: true });
+await copyFile(path.join(modules, 'pdfjs-dist/build/pdf.worker.min.mjs'), path.join(pdf, 'pdf.worker.min.mjs'));
+await copyFile(path.join(modules, 'pdfjs-dist/LICENSE'), path.join(pdf, 'LICENSE'));
+await cp(path.join(modules, 'pdfjs-dist/cmaps'), path.join(pdf, 'cmaps'), { recursive: true });
 await mkdir(path.join(target, 'occt'), { recursive: true });
 // Build the pinned engine with local decoders. A real worker URL lets the CAD
 // bindings have their own script policy without relaxing the viewer document.
