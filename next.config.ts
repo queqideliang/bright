@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["web-ifc"],
+  outputFileTracingIncludes: {
+    "/api/workbench/model-sources/*": ["./node_modules/web-ifc/web-ifc-node.wasm"],
+  },
   async headers() {
     return [
       { source: "/:path*", headers: [{ key: "X-Frame-Options", value: "DENY" }] },

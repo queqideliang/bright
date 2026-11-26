@@ -23,7 +23,7 @@ export default function ProductHeader({ active, children }: {
           aria-current={item.key === active ? 'page' : undefined}>{item.title}</Link>)}
       </nav>
       <div className="bv-header-action">{children ?? <Link href="/workbench?tool=documents" className="bv-header-docs">
-        <BookOpen size={16} aria-hidden="true" />项目资料问答
+        <BookOpen size={16} aria-hidden="true" />项目 AI 问答
       </Link>}</div>
     </div>
   </header>;

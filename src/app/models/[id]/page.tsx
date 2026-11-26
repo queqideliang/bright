@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import ProductHeader from '@/components/product-header';
+import ProjectDocumentsPanel from '@/app/workbench/project-documents-panel';
 import { storageForAccount, findLibraryItem } from '@/lib/model-library/storage';
 import { libraryIdPattern, modelKind } from '@/lib/model-library/formats';
 import { createClient } from '@/lib/supabase/server';
@@ -17,8 +18,8 @@ export default async function StoredModelPage({ params }: { params: Promise<{ id
   if (!user) redirect('/login?next=/models/' + id);
   const model = await findLibraryItem(storageForAccount(user.id), id);
   if (!model) notFound();
-  return <div className="ml-detail"><ProductHeader active="models" /><ModelStage name={model.name}>
+  return <div className="ml-detail"><ProductHeader active="models"><ProjectDocumentsPanel initialModel={{id,name:model.name}} /></ProductHeader><ModelStage name={model.name}>
     {modelKind(model.name) === 'geometry' ? <GeometryView id={id} /> :
-      <iframe className="bv-frame" title="云端 BIM 模型" src={'/bim-viewer/index.html#modelId=' + id} allow="fullscreen" />}
+      <iframe data-bv-project-viewer className="bv-frame" title="云端 BIM 模型" src={'/bim-viewer/index.html#modelId=' + id} allow="fullscreen" />}
   </ModelStage></div>;
 }

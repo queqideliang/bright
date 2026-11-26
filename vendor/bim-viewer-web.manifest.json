@@ -4,9 +4,9 @@
   "generator": "web/scripts/sync-bim-viewer.mjs",
   "archive": {
     "file": "bim-viewer-web.json.gz",
-    "bytes": 2048180,
-    "sha256": "847950f338e81d215d38201197e05a04095aea3121a3d681e0f1a42472fd4125",
-    "uncompressedBytes": 8920551
+    "bytes": 2051922,
+    "sha256": "5dacb8c89bf1c2003f9136ae4c6a302a6f6c6222e2b0e0147cc022806d02c2f2",
+    "uncompressedBytes": 8930163
   },
   "files": [
     {
@@ -25,14 +25,9 @@
       "sha256": "677386b644b280eee55b72d42794a6d21d435c18ecf945f6f22c19499317422b"
     },
     {
-      "path": "assets/ifc.worker-Cvx6v1Lm.js",
-      "bytes": 3606243,
-      "sha256": "1af1877090c3dd44f7e7853fd768de4ebe22086392cc5aec7c33347d130bdcf5"
-    },
-    {
-      "path": "assets/index-BMCmXj9V.js",
-      "bytes": 841697,
-      "sha256": "11e2f1711d1dd02b253c9e1d7869cc0fbf233eeead39baf47d83ce7b185fa56c"
+      "path": "assets/ifc.worker-D-XoxyUq.js",
+      "bytes": 3607200,
+      "sha256": "f1d7100a4c952da9550a5674ff74d3bc0bf377e7658ff3c4ad19b3597aea2f4a"
     },
     {
       "path": "assets/index-BcqtePB9.css",
@@ -40,19 +35,24 @@
       "sha256": "439187c9dcb792155bd3e2bedab1b154a56029e2156ad7dcf90dec5f66b4d09d"
     },
     {
+      "path": "assets/index-e8T7nFPH.js",
+      "bytes": 847795,
+      "sha256": "53bc0e52df32ef4c11d2f6abc39b190e63e6945751821a2eb7fc3cbf6da11a6d"
+    },
+    {
       "path": "assets/model.worker-Bg6GRY_M.js",
       "bytes": 144912,
       "sha256": "cdbfb32eae3eedf8ff997eaa42919178bc7d01ada0cb021efe68bfc12115f1b3"
     },
     {
-      "path": "assets/vim-export.worker-CcKg2zTn.js",
-      "bytes": 108320,
-      "sha256": "f8766ba24f4fbfc36c07cb5620eb5082f19e08bff20049af144d8d5725897e39"
+      "path": "assets/vim-export.worker-CPVKjRHy.js",
+      "bytes": 108474,
+      "sha256": "cdf11abdc1828ff6f34f46bf1cf07df1e123dab95467525d5244fdb8a85a38fc"
     },
     {
       "path": "index.html",
       "bytes": 954,
-      "sha256": "d6c4463cd9b4639b1ea01f0242927a025070c26dbcd1db44b15f81a4420a5bca"
+      "sha256": "08471945074dd37a029efd6054aba8bb94ef681a66a7c0d934d596b95fc19f3c"
     },
     {
       "path": "licenses/LICENSE",
@@ -134,7 +134,7 @@
       "tools/bim-viewer/src/ifc.worker.ts": "70e06a300e4f36867247e456855bdaef26f61720bfe90ead29df2e93ffddd6ed",
       "tools/bim-viewer/src/import/binary-geometry.ts": "2d621c189fd6e7b76b0aa89b39ba3938a2110c21355d12903457d59f556d335f",
       "tools/bim-viewer/src/import/capacity.ts": "2f53d9b79a54fde806ed3ec293d05a865014266f24bdcd5c72296a5c1140a63e",
-      "tools/bim-viewer/src/import/ifc.ts": "034636ca657e4cfb3b2bd03f79a52676967596f96f7bd86ee1e97e46088340fc",
+      "tools/bim-viewer/src/import/ifc.ts": "e84e3a189f6cd3053f53b27d6eadee234f48f55be1196429069939ef2dd75dd9",
       "tools/bim-viewer/src/import/image-size.ts": "ae655270ed9185940ddd46c4e883ef0e528f40cb2bcacfe5d1487cf9f84d4e16",
       "tools/bim-viewer/src/import/json-stream.ts": "660808ce03491542038a11d4ac1181d88c70abfe660ab7478ced8d1f29446793",
       "tools/bim-viewer/src/import/load-timing.ts": "76efbae7c16ec8f1890af6f8aa4cc921fdf62cff764217d25c3934bfacd1af29",
@@ -145,14 +145,16 @@
       "tools/bim-viewer/src/import/shared-json.ts": "ad96002b2541472ab103cecd6136b4185ebe797b383b7b016694dbf1a3ddbc06",
       "tools/bim-viewer/src/import/typed-pages.ts": "aaa4a99771d06bbb3dcddc992317e541c118d89559ff6d3cfa789f507572e252",
       "tools/bim-viewer/src/import/zip.ts": "dec56cdb898dffb023084abcec9d1394cb7abe0bf9f428dc00118727210ef490",
-      "tools/bim-viewer/src/main.ts": "4ee3a8e4b4e2bf48097a2870b3bda5585028d6f91f7487300b3eaef4aabc0b83",
+      "tools/bim-viewer/src/main.ts": "5b7d4f30fabd5b923b92c117d47f0f5e15bd2b4c97f6a50439818985e5aaea39",
       "tools/bim-viewer/src/model-assistant.ts": "86421ecdf0979f6f6d0ff16091b7879b2f42f3c40f80a8e4558e6a3c2f7f1d1f",
-      "tools/bim-viewer/src/model.ts": "e6029272353124efd72337d8ea74488bdedd5756867bfb3f0f9c4cc75773622d",
+      "tools/bim-viewer/src/model.ts": "71b64fcf3724bb9de46652e2a442a34c9e83c30f8d1a2ee184ee2d8602f1ba84",
       "tools/bim-viewer/src/model.worker.ts": "e69f13dbd999582f4f237875254fc08721f2f109f058a1a9ce04327c91918cc8",
       "tools/bim-viewer/src/navigation-ui.css": "419c4f051e5ceb33b386b25ebfb1f7f67bc5a5977a539bfb7da8e67165a9678e",
       "tools/bim-viewer/src/open-timing.ts": "6aa6e8d50b5c48cd7a583fb4df0d81c18f4843273069cfda22d4d37ec4ccde9e",
+      "tools/bim-viewer/src/project-qa-bridge.ts": "fe7bc1d54d886d54247e20112649f0b600fced6a1b484ac973e789e429248973",
+      "tools/bim-viewer/src/project-qa-model.ts": "472b69a1863f43015934f10f9a14bd70d71b20c645bd78fc1b5f035d7b260ed2",
       "tools/bim-viewer/src/property-store.ts": "3c566db543a7623d374e180af60ef36dba4d1ad4ca0c9229b9f6d7fad7c05277",
-      "tools/bim-viewer/src/quantities.ts": "255b922dac86777f374da370dd9898cbf708c12ee306b90561fb7a8904941605",
+      "tools/bim-viewer/src/quantities.ts": "9ef27ac1784ad91d3d1c56c1d41264a18a8f6651da1289021da83c922eedc3ac",
       "tools/bim-viewer/src/quantity-ui.css": "6101f74d27b0915092099aa3fa8dda8a7bbcd812454fa278bb6f985e3a52a2e9",
       "tools/bim-viewer/src/quantity-ui.ts": "13093eebf2bc91bd876aade3ed05c27f276a8fe8646288e9b10a9d4b76a29786",
       "tools/bim-viewer/src/review-ui.ts": "100cbc8649d880591367a5872f9223e398832de7d4efaaa8f4eb9f113fc4c49c",

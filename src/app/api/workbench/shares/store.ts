@@ -1,14 +1,15 @@
 import { randomBytes } from 'node:crypto';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { AskError } from '../ask/contract.ts';
+import { parseModelFact, type ModelFact } from '../../../../lib/project-model-evidence.ts';
 
 export const shareByteLimit = 1024 * 1024;
 const maxShares = 64;
 const maxPassages = 1200;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const tokenPattern = /^[A-Za-z0-9_-]{24}$/;
-type Passage = { location: string; text: string };
-type Document = { title: string; passages: Passage[] };
+type Passage = { location: string; text: string; fact?: ModelFact };
+type Document = { title: string; kind?: 'model'; passages: Passage[] };
 export type ShareContent = { title: string; documents: Document[] };
 type Summary = { id: string; title: string; createdAt: string; documentCount: number; passageCount: number };
 type Row = { name: string; created_at?: string | null };
@@ -43,17 +44,23 @@ function validateContent(input: unknown): ShareContent {
     throw new AskError(400, '请输入共享标题并选择 1 到 16 份资料。');
   }
   let count = 0;
-  const documents = input.documents.map((doc: unknown) => {
+  let modelCount = 0;
+  const documents: Document[] = input.documents.map((doc: unknown) => {
     if (!record(doc) || !text(doc.title, 210) || !Array.isArray(doc.passages) || !doc.passages.length) {
       throw new AskError(400, '共享文件名称或内容无效。');
     }
     count += doc.passages.length;
     if (count > maxPassages) throw new AskError(413, '一次共享最多包含 1200 个文本片段。');
+    const isModel = doc.kind === 'model';
+    if (isModel && ++modelCount > 1) throw new AskError(400, '每个共享问答可选择一个模型。');
     const passages = doc.passages.map((p: unknown) => {
       if (!record(p) || !text(p.location, 220) || !text(p.text, 3500)) throw new AskError(400, '共享片段的来源或正文无效。');
-      return { location: p.location, text: p.text };
+      if (!isModel || p.fact === undefined) return { location: p.location, text: p.text };
+      const fact = parseModelFact(p.fact);
+      if (!fact) throw new AskError(400, '模型统计字段无效，请重新读取并共享。');
+      return { location:p.location, text:p.text, fact };
     });
-    return { title: doc.title.trim(), passages };
+    return isModel ? {kind:'model',title:doc.title.trim(),passages} : {title:doc.title.trim(),passages};
   });
   return { title: input.title.trim(), documents };
 }

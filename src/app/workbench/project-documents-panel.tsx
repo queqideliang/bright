@@ -6,11 +6,12 @@ import { BookOpen, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { findPassages, listDocuments, readProjectFile, removeDocument, saveDocument, type ProjectDocument } from '@/lib/project-documents';
 import './project-documents.css';
+import ModelSourcePicker, {type EvidenceDocument, type ModelChoice, type LibraryModel} from './model-source-picker';
 
 type Sources = ReturnType<typeof findPassages>;
-type Answer = { text: string; sources: Sources; sourcesOnly: boolean };
+type Answer = { text: string; sources: Sources; mode: 'generated' | 'sources-only' | 'calculated' | 'extractive' };
 type ShareSummary = { id: string; title: string; createdAt: string; documentCount: number; passageCount: number };
-type SharedView = ShareSummary & { documents: Pick<ProjectDocument, 'title' | 'passages'>[] };
+type SharedView = ShareSummary & { documents: EvidenceDocument[] };
 const sharesApi = '/api/workbench/shares';
 const sharePath = (id: string) => '/workbench?share=' + encodeURIComponent(id);
 
@@ -22,7 +23,7 @@ async function readReply(response: Response, checkSession: () => void) {
 }
 
 function OwnedShares({ owner, chosen, checkSession }: {
-  owner: string; chosen: ProjectDocument[]; checkSession: () => void;
+  owner: string; chosen: EvidenceDocument[]; checkSession: () => void;
 }) {
   const [shares, setShares] = useState<ShareSummary[]>([]);
   const [offset, setOffset] = useState(0);
@@ -64,7 +65,7 @@ function OwnedShares({ owner, chosen, checkSession }: {
         request.headers = { 'Content-Type': 'application/json' };
         request.body = JSON.stringify({
           owner, title: title.trim() || chosen[0].title.slice(0, 100),
-          documents: chosen.map(doc => ({ title: doc.title, passages: doc.passages })),
+          documents: chosen.map(({title, kind, passages}) => ({title, kind, passages})),
         });
       }
       const response = await fetch(revokeId ? sharesApi + '/' + encodeURIComponent(revokeId) : sharesApi, request);
@@ -95,7 +96,7 @@ function OwnedShares({ owner, chosen, checkSession }: {
     setActive(open);
   }}>
     <summary>团队共享</summary>
-    <p>创建共享会将所选资料的文件名、提取文字和出处保存到云端。任何持有链接并已登录的人均可查看这些资料的文字并提问。原文件保存在本机。</p>
+    <p>将当前选择的模型统计、资料原文和出处保存为一份云端快照。持链接的同事登录后即可提问。更换模型或资料后，可重新创建共享。</p>
     <label>共享名称 <input type="text" value={title} maxLength={100} disabled={busy}
       placeholder={chosen[0]?.title || '可选'} onChange={event => setTitle(event.target.value)} /></label>
     <button type="button" className="bv-doc-primary" disabled={busy || !chosen.length} onClick={() => void update()}>
@@ -109,7 +110,7 @@ function OwnedShares({ owner, chosen, checkSession }: {
       {busy && <p role="status">正在更新共享…</p>}
       {!busy && !shares.length && !error && <p>还没有共享。可以先勾选上方资料，再创建链接。</p>}
       <ul>{shares.map(item => <li key={item.id}><span>{item.title} · {item.documentCount} 份</span>
-        <div><button type="button" onClick={() => { setLink(location.origin + sharePath(item.id)); setNote(''); }}>查看链接</button>
+        <div><a href={sharePath(item.id)} target="_blank" rel="noreferrer">打开问答</a><button type="button" onClick={() => { setLink(location.origin + sharePath(item.id)); setNote(''); }}>查看链接</button>
           <button type="button" disabled={busy} aria-label={'撤销 ' + item.title} onClick={() => void update(item.id)}>撤销</button></div></li>)}</ul>
       {nextOffset !== null && <button type="button" disabled={busy} onClick={() => setOffset(nextOffset)}>查看更多共享</button>}
     </section>}
@@ -117,9 +118,10 @@ function OwnedShares({ owner, chosen, checkSession }: {
   </details>;
 }
 
-function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; shareId: string | null; checkSession: () => void }) {
+function DocumentWorkspace({ owner, shareId, initialModel, checkSession }: { owner: string; shareId: string | null; initialModel?: LibraryModel; checkSession: () => void }) {
   const [documents, setDocuments] = useState<ProjectDocument[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [shelfLoaded, setShelfLoaded] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [sourceId, setSourceId] = useState('');
@@ -129,8 +131,15 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
   const [ocrConsent, setOcrConsent] = useState(false);
   const [slideImageConsent, setSlideImageConsent] = useState(false);
   const [shared, setShared] = useState<SharedView | null>(null);
+  const [model, setModel] = useState<ModelChoice>({document:null,pending:!shareId});
+  const [retryRead, setRetryRead] = useState(0);
+  const revision = useRef(0);
+  const updateModel = useCallback((next: ModelChoice) => {
+    revision.current++; setModel(next); setAnswer(null); setSourceId('');
+  }, []);
   const task = useRef<AbortController | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const answerHeading = useRef<HTMLHeadingElement>(null);
   const sourcePanel = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -139,7 +148,15 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
     const load = shareId
       ? fetch(sharesApi + '/' + encodeURIComponent(shareId), { cache: 'no-store', signal: pending.signal })
           .then(response => readReply(response, checkSession)).then(body => { if (!pending.signal.aborted) setShared(body.share); })
-      : listDocuments(owner).then(result => { if (!pending.signal.aborted) setDocuments(result); });
+      : listDocuments(owner).then(result => {
+          if (pending.signal.aborted) return;
+          setDocuments(result);
+          try {
+            const saved: unknown = JSON.parse(sessionStorage.getItem('bv-project-qa-files:'+owner) || '[]');
+            if (Array.isArray(saved)) setSelected(result.filter(doc=>saved.includes(doc.id)).map(doc=>doc.id));
+          } catch { /* Storage may be unavailable in a private session. */ }
+          setShelfLoaded(true);
+        });
     load.catch(cause => {
       if (!pending.signal.aborted) setError(shareId
         ? (cause instanceof Error ? cause.message : '共享资料无法读取，请向提供者确认链接。')
@@ -148,11 +165,20 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
       if (task.current === pending) { task.current = null; setStatus(''); }
     });
     return () => { task.current?.abort(); task.current = null; };
-  }, [owner, shareId, checkSession]);
+  }, [owner, shareId, checkSession, retryRead]);
+
+  useEffect(() => {
+    if (!shelfLoaded || shareId) return;
+    try { sessionStorage.setItem('bv-project-qa-files:'+owner,JSON.stringify(selected)); } catch { /* Selection still applies in memory. */ }
+  }, [owner, selected, shareId, shelfLoaded]);
 
   useEffect(() => {
     if (sourceId) sourcePanel.current?.focus();
   }, [sourceId]);
+
+  useEffect(() => {
+    if (answer) answerHeading.current?.scrollIntoView({ block: 'nearest' });
+  }, [answer]);
 
   function clearAnswer() { setAnswer(null); setSourceId(''); }
 
@@ -204,9 +230,10 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
   }
 
   function ask() {
+    const selectedRevision = revision.current;
     return perform('正在查找原文并生成回答…', async signal => {
       const text = question.trim();
-      const sources = shareId ? [] : findPassages(documents.filter(item => selected.includes(item.id)), text);
+      const sources = shareId ? [] : findPassages(chosen, text);
       if (!shareId && !sources.length) throw new Error('所选资料中未找到相关片段。请换一个关键词或选择其他资料。');
       const { data, error: authError } = await createClient().auth.getUser();
       signal.throwIfAborted();
@@ -222,21 +249,28 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
       if (shareId && response.status === 404) setShared(null);
       if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : '暂时无法完成问答，请重试。');
       if (typeof body.answer !== 'string' || !body.answer.trim()) throw new Error('未收到有效答复，请重试。');
-      setAnswer({ text: body.answer, sources: shareId ? body.sources : sources, sourcesOnly: body.mode === 'sources-only' });
+      if (selectedRevision === revision.current) setAnswer({
+        text: body.answer, sources: shareId ? body.sources : sources,
+        mode: ['sources-only', 'calculated', 'extractive'].includes(body.mode) ? body.mode : 'generated',
+      });
     });
   }
 
   const busy = !!status;
-  const chosen = documents.filter(doc => selected.includes(doc.id));
-  const canAsk = !!question.trim() && (shareId ? !!shared : !!chosen.length);
+  const chosen: EvidenceDocument[] = documents.filter(doc => selected.includes(doc.id));
+  if (model.document) chosen.unshift(model.document);
+  const modelReady = !model.pending && !model.error;
+  const canAsk = !!question.trim() && (shareId ? !!shared : modelReady && !!chosen.length);
   const hasSelectedSpreadsheet = (shared?.documents || chosen).some(doc => /\.(?:xlsx?|csv|tsv)$/i.test(doc.title));
   const currentSource = answer?.sources.find(source => source.id === sourceId);
   return <>
     {shareId ? <section className="bv-doc-shelf" aria-label="团队共享资料"><h3>{shared?.title || '团队共享资料'}</h3>
-      {shared && <><p>可向这组共享资料提问。点击回答中的引用可查看原文。</p>
-        <ul>{shared.documents.map((doc, i) => <li key={i}>{doc.title}</li>)}</ul></>}
+      {shared && <><p>提问将使用以下共享内容。点击回答中的引用可核对依据。</p>
+        <ul>{shared.documents.map((doc, i) => <li key={i}>{doc.kind === 'model' ? '模型 · ' : ''}{doc.title}</li>)}</ul></>}
+      {!shared && !busy && error && <button type="button" onClick={() => {setError(''); setStatus('正在读取共享资料…'); setRetryRead(n => n+1);}}>重新读取共享</button>}
       <a href="/workbench">返回我的工作台</a>
-    </section> : <section className="bv-doc-shelf" aria-label="本机资料">
+    </section> : <><ModelSourcePicker initialModel={initialModel} disabled={busy} onChange={updateModel} />
+    <section className="bv-doc-shelf" aria-label="本机资料">
       <div className="bv-doc-row"><h3>本机资料</h3>
         <button type="button" className="bv-doc-secondary" disabled={busy} onClick={() => picker.current?.click()}>添加资料</button>
         <input ref={picker} aria-label="选择资料文件" type="file" hidden multiple accept=".xlsx,.xls,.csv,.tsv,.pdf,.docx,.pptx,.ppt,.txt,.md,.jpg,.jpeg,.png,.webp" onChange={event => {
@@ -261,6 +295,7 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
           const files = pendingImages; setPendingImages([]); setOcrConsent(false); void add(files, true);
         }}>识别并添加图片</button> <button type="button" disabled={busy} onClick={() => { setPendingImages([]); setOcrConsent(false); }}>取消</button></div>
       </div>}
+      {documents.length > 0 && <p>勾选参与本次问答的资料，已选 {selected.length} 份。</p>}
       {documents.length > 0 && <ul>{documents.map(doc => <li key={doc.id}>
         <label><input type="checkbox" checked={selected.includes(doc.id)} disabled={busy} onChange={event => {
           const checked = event.target.checked;
@@ -268,24 +303,24 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
         }} /> <span>{doc.title}</span></label>
         <button type="button" disabled={busy} aria-label={'移除 ' + doc.title} onClick={() => void remove(doc.id)}>移除</button>
       </li>)}</ul>}
-      <OwnedShares owner={owner} chosen={chosen} checkSession={checkSession} />
-    </section>}
+      <OwnedShares owner={owner} chosen={modelReady ? chosen : []} checkSession={checkSession} />
+    </section></>}
     <form onSubmit={event => { event.preventDefault(); if (canAsk) void ask(); }}>
       <label htmlFor="project-document-question">你的问题</label>
       <textarea id="project-document-question" maxLength={1000} rows={3} value={question} disabled={busy}
-        placeholder={hasSelectedSpreadsheet ? '例如：“墙体明细”中，构件 W-01 的体积是多少？' : '例如：交付时墙构件必须填写哪些字段？'}
+        placeholder={model.document || shared?.documents.some(d => d.kind === 'model') ? '例如：二层有多少面墙？墙面积是多少，和工程量表相差多少？' : hasSelectedSpreadsheet ? '例如：“墙体明细”中，构件 W-01 的体积是多少？' : '例如：交付时墙构件必须填写哪些字段？'}
         onChange={event => { setQuestion(event.target.value); clearAnswer(); }} />
       {hasSelectedSpreadsheet && <p>提问时可写明工作表名、列名或构件编号。点击回答中的引用可核对工作表和行号。</p>}
-      <p>点击提问后，问题与所选资料中检索到的原文片段、文件名和位置会发送给 AI 服务。</p>
+      <p>提问会使用所选模型的统计和勾选资料的相关片段。需要 AI 解答时，会将问题、相关统计和原文片段发给 AI 服务。</p>
       <button className="bv-doc-primary" disabled={busy || !canAsk}>提问</button>
     </form>
     {status && <p role="status">{status}</p>}
     {error && <p role="alert" className="bv-doc-error">{error}</p>}
-    {answer && <section className="bv-doc-answer" data-document-answer={answer.sourcesOnly ? undefined : ''} data-document-sources={answer.sourcesOnly ? '' : undefined} aria-live="polite">
-      <h3>{answer.sourcesOnly ? '检索到的原文' : '回答'}</h3><p>{answer.text.split(/(\[S\d+\])/g).map((part, index) => {
+    {answer && <section className="bv-doc-answer" data-document-answer={answer.mode === 'sources-only' ? undefined : ''} data-document-sources={answer.mode === 'sources-only' ? '' : undefined} aria-live="polite">
+      <h3 ref={answerHeading}>{{'sources-only':'检索到的原文', calculated:'核算结果', extractive:'原文摘答', generated:'回答'}[answer.mode]}</h3><p>{answer.text.split(/(\[S\d+\])/g).map((part, index) => {
         const ref = answer.sources.find(item => '[' + item.id + ']' === part);
         return ref ? <button type="button" key={index} aria-label={'查看引用 ' + ref.id}
-          aria-expanded={sourceId === ref.id} onClick={() => setSourceId(ref.id)}>{answer.sourcesOnly ? part + ' ' + ref.title + ' · ' + ref.location : part}</button> : part;
+          aria-expanded={sourceId === ref.id} onClick={() => setSourceId(ref.id)}>{answer.mode === 'sources-only' ? part + ' ' + ref.title + ' · ' + ref.location : part}</button> : part;
       })}</p>
       {currentSource && <article ref={sourcePanel} tabIndex={-1} aria-label={'引用 ' + currentSource.id + ' 原文'}>
         <h4>{currentSource.title} · {currentSource.location}</h4><p>{currentSource.text}</p>
@@ -294,7 +329,7 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
   </>;
 }
 
-function AuthenticatedWorkspace({ shareId }: { shareId: string | null }) {
+function AuthenticatedWorkspace({ shareId, initialModel }: { shareId: string | null; initialModel?: LibraryModel }) {
   const [owner, setOwner] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
   const sequence = useRef({ value: 0 });
@@ -318,42 +353,42 @@ function AuthenticatedWorkspace({ shareId }: { shareId: string | null }) {
     window.addEventListener('focus', check);
     return () => { ++version.value; subscription.unsubscribe(); window.removeEventListener('focus', check); };
   }, [check]);
-  if (owner) return <DocumentWorkspace key={owner + ':' + (shareId || '')} owner={owner} shareId={shareId} checkSession={check} />;
+  if (owner) return <DocumentWorkspace key={owner + ':' + (shareId || '') + ':' + (initialModel?.id || '')} owner={owner} shareId={shareId} initialModel={initialModel} checkSession={check} />;
   if (pending) return <p role="status">正在检查登录状态…</p>;
   const loginUrl = '/login?next=' + encodeURIComponent(shareId ? sharePath(shareId) : '/workbench?tool=documents');
-  return <div className="bv-doc-login"><p>{shareId ? '请登录后查看共享资料并提问。' : '请登录后添加本机资料并提问。'}登录会在新标签页打开，当前模型会保留。</p>
+  return <div className="bv-doc-login"><p>{shareId ? '请登录后查看共享内容并提问。' : '请登录后，就模型和资料提问。'}登录会在新标签页打开，当前模型会保留。</p>
     <a className="bv-doc-primary" href={loginUrl} target="_blank" rel="noopener noreferrer">登录</a>
     <button type="button" onClick={check}>重新检查登录状态</button></div>;
 }
 
-function InteractivePanel() {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState(false);
+function InteractivePanel({initialModel}: {initialModel?: LibraryModel}) {
   const params = useSearchParams();
   const shareId = params.get('share');
   const openDocuments = params.get('tool') === 'documents';
+  return <ProjectAskDialog key={JSON.stringify([shareId,openDocuments,initialModel?.id])}
+    autoOpen={shareId !== null || openDocuments} shareId={shareId} initialModel={initialModel} />;
+}
+
+function ProjectAskDialog({autoOpen, shareId, initialModel}: {autoOpen:boolean; shareId:string|null; initialModel?:LibraryModel}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(autoOpen);
   const validLink = shareId === null || /^[0-9a-f-]{36}\.[A-Za-z0-9_-]{24}$/.test(shareId);
   useEffect(() => {
-    if ((shareId !== null || openDocuments) && dialog.current && !dialog.current.open) {
-      dialog.current.showModal();
-      setOpen(true);
-    }
-  }, [shareId, openDocuments]);
+    if (open && dialog.current && !dialog.current.open) dialog.current.showModal();
+  }, [open]);
   return <>
-    <button type="button" className="bv-doc-trigger" aria-haspopup="dialog" onClick={() => {
-      dialog.current?.showModal(); setOpen(true);
-    }}><BookOpen size={16} aria-hidden="true" />项目资料问答</button>
-    <dialog className="bv-doc-dialog" aria-label="项目资料问答" ref={dialog} onClose={() => setOpen(false)}>
-      <div className="bv-doc-row"><h2>项目资料问答</h2>
-        <button type="button" className="bv-doc-close" aria-label="关闭项目资料问答" onClick={() => dialog.current?.close()}><X size={18} aria-hidden="true" /></button></div>
-      {open && (validLink ? <AuthenticatedWorkspace shareId={shareId} />
+    <button type="button" className="bv-doc-trigger" aria-haspopup="dialog" onClick={() => setOpen(true)}><BookOpen size={16} aria-hidden="true" />项目 AI 问答</button>
+    <dialog className="bv-doc-dialog" aria-label="项目 AI 问答" ref={dialog} onClose={() => setOpen(false)}>
+      <div className="bv-doc-row"><h2>项目 AI 问答</h2>
+        <button type="button" className="bv-doc-close" aria-label="关闭项目 AI 问答" onClick={() => dialog.current?.close()}><X size={18} aria-hidden="true" /></button></div>
+      {open && (validLink ? <AuthenticatedWorkspace shareId={shareId} initialModel={initialModel} />
         : <p role="alert" className="bv-doc-error">共享链接不完整，请让提供者重新复制完整链接。</p>)}
     </dialog>
   </>;
 }
 
-export default function ProjectDocumentsPanel() {
-  return <Suspense fallback={<button type="button" className="bv-doc-trigger" disabled>项目资料问答</button>}>
-    <InteractivePanel />
+export default function ProjectDocumentsPanel({initialModel}: {initialModel?: LibraryModel}) {
+  return <Suspense fallback={<button type="button" className="bv-doc-trigger" disabled>项目 AI 问答</button>}>
+    <InteractivePanel initialModel={initialModel} />
   </Suspense>;
 }

@@ -3,7 +3,8 @@ import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { libraryExtensions, libraryIdPattern, libraryMaxBytes, libraryPageSize, modelExtension, type LibraryItem } from './formats';
 
 class LibraryError extends Error {
-  constructor(message: string, readonly status: number) { super(message); }
+  readonly status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
 }
 
 export function libraryResponse(value: unknown, status = 200) {

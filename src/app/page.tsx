@@ -39,8 +39,8 @@ export default function HomePage() {
       </section>
       <section className="bv-home-docs">
         <MessagesSquare aria-hidden="true" size={27} strokeWidth={1.65} />
-        <div><h2>项目资料问答</h2><p>用工程表格、交底 PPT 和现场图片提问，与同事分享可核对的原文。</p></div>
-        <Link href="/workbench?tool=documents">打开资料问答 <ArrowRight size={16} aria-hidden="true" /></Link>
+        <div><h2>项目 AI 问答</h2><p>结合模型工程量、交底文件和现场资料提问，核对数字和出处。</p></div>
+        <Link href="/workbench?tool=documents">打开问答 <ArrowRight size={16} aria-hidden="true" /></Link>
       </section>
     </main>
   </div>;

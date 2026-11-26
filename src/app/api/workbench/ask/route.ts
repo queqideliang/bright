@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { findPassages } from '../../../../lib/project-document-search.ts';
+import { computedWallAnswer } from '../../../../lib/project-wall-answer.ts';
+import { computedCategoryAnswer } from '../../../../lib/project-category-answer.ts';
+import { extractiveAnswer } from '../../../../lib/project-extractive-answer.ts';
 import { failure, jsonResponse, readInput } from '../http.ts';
 import { readShare } from '../shares/store.ts';
 import { AskError, maxRequestBytes, parseCompletion, prepareTask, type Task } from './contract.ts';
@@ -7,10 +10,17 @@ import { completeTask, ProviderUnavailable } from './provider.ts';
 import { checkRate, requireWorkbenchOrigin } from './access.ts';
 
 async function answerTask(task: Task) {
+  if (task.documents) {
+    const question=String(task.input.question);
+    const result=computedWallAnswer(question,task.documents) ?? computedCategoryAnswer(question,task.documents);
+    if (result) return result;
+  }
   try {
     return parseCompletion(task, await completeTask(task));
   } catch (error) {
     if (!(error instanceof ProviderUnavailable) || task.mode !== 'documents' || !task.sourceIds?.size) throw error;
+    const excerpt=extractiveAnswer(String(task.input.question),task.documents ?? []);
+    if (excerpt) return excerpt;
     const citations = [...task.sourceIds].slice(0, 3).map(id => '[' + id + ']').join(' ');
     return { mode: 'sources-only', answer: 'AI 服务暂时无法生成回答。可打开本次检索的资料片段核对原文。 ' + citations };
   }

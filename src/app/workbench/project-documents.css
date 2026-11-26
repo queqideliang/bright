@@ -59,9 +59,22 @@
 .bv-doc-ocr { padding: .75rem; background: var(--bv-paper); border-radius: 6px; }
 .bv-doc-ocr label { display: flex; align-items: flex-start; gap: .4rem; font-size: .88rem; line-height: 1.6; }
 .bv-doc-ocr > div { margin-top: .5rem; }
+.bv-doc-model { padding-block: .25rem .65rem; border-bottom: 1px solid var(--bv-line); }
+.bv-doc-model > label { display: block; margin-bottom: .4rem; font-size: 1rem; font-weight: 650; }
+.bv-doc-model select { width: 100%; min-height: 2.4rem; border: 1px solid var(--bv-line); border-radius: 6px; padding: .35rem .65rem; font: inherit; background: var(--bv-surface); color: var(--bv-ink); }
+.bv-doc-model p { margin: .45rem 0; overflow-wrap: anywhere; }
+.bv-doc-sharing li a { align-self: center; color: var(--bv-teal); text-decoration: underline; }
 .bv-doc-dialog .bv-doc-close { display: inline-grid; place-items: center; padding: 0; width: 34px; height: 34px; border: 1px solid var(--bv-line); border-radius: 7px; }
 .bv-doc-row:first-child > h2 { color: var(--bv-ink); font-size: 1.4rem; letter-spacing: -.035em; }
-.bv-doc-dialog > .bv-doc-row:first-child { padding-bottom: .85rem; border-bottom: 1px solid var(--bv-line); margin-bottom: 1rem; }
+.bv-doc-dialog > .bv-doc-row:first-child {
+  position: sticky;
+  top: calc(0px - clamp(1rem, 3vw, 1.75rem));
+  z-index: 1;
+  background: #fff;
+  padding-block: .5rem .85rem;
+  border-bottom: 1px solid var(--bv-line);
+  margin-bottom: 1rem;
+}
 .bv-doc-dialog summary { color: var(--bv-teal); }
 .bv-doc-dialog button:not(:disabled):hover { border-color: #73a997; }
 .bv-doc-dialog .bv-doc-primary:hover { background: #09665c; }

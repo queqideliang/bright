@@ -16,7 +16,7 @@ export default async function WorkbenchPage({ searchParams }: { searchParams: Pr
   return <div className="bv-workbench-shell">
     <ProductHeader active="workbench"><ProjectDocumentsPanel /></ProductHeader>
     <main aria-label="模型查看与审核" className="bv-workbench-frame">
-      <iframe src={'/bim-viewer/index.html' + (viewerQuery ? '?' + viewerQuery : '')}
+      <iframe data-bv-project-viewer src={'/bim-viewer/index.html' + (viewerQuery ? '?' + viewerQuery : '')}
         title="BRIGHT VISION 模型查看与审核工作台" allow="fullscreen" referrerPolicy="no-referrer" />
     </main>
   </div>;

@@ -38,6 +38,21 @@ test('created snapshots are private to the owner list, accessible by capability,
   globalThis.account = guest;
   assert.equal((await collection.POST(req('POST', body))).status, 403);
   globalThis.account = owner;
+  const metric = (value,unit) => ({unit,value,available:1,missing:0,invalid:0,unavailable:0,overflow:false});
+  const fact = {scope:'category',category:'墙',level:null,components:2,objects:1,identifiedObjects:1,source:'revit-parameters',
+    metrics:{length:metric(3,'m'),area:metric(4.5,'m2'),volume:metric(1,'m3')}};
+  const model = {title:'结构模型.zip',kind:'model',passages:[{location:'类别：墙',text:'墙的来源去重面积为 4.5 m²。',fact}]};
+  const withUntrustedFact = {...doc,passages:doc.passages.map(p=>({...p,fact}))};
+  const withModel = await collection.POST(req('POST',{...body,documents:[model,withUntrustedFact]}));
+  assert.equal(withModel.status,201);
+  const modelId = (await withModel.json()).share.id;
+  const modelParams = {params:Promise.resolve({id:modelId})};
+  globalThis.account = guest;
+  assert.deepEqual((await (await item.GET(req('GET'),modelParams)).json()).share.documents,[model,doc]);
+  globalThis.account = owner;
+  assert.equal((await item.DELETE(req('DELETE'),modelParams)).status,200);
+  const invalidModel = {...model,passages:[{...model.passages[0],fact:{...fact,objects:-2}}]};
+  assert.equal((await collection.POST(req('POST',{...body,documents:[invalidModel]}))).status,400);
   const created = await collection.POST(req('POST', body));
   assert.equal(created.status, 201);
   const { share } = await created.json();
@@ -69,7 +84,8 @@ test('created snapshots are private to the owner list, accessible by capability,
   assert.equal(result.sources[0].location, '页 1');
   quotaReached = true;
   const limited = await (await ask.POST(req('POST', question))).json();
-  assert.equal(limited.mode, 'sources-only');
+  assert.equal(limited.mode, 'extractive');
+  assert.match(limited.answer, /交付编号为 QA8/u);
   assert.match(limited.answer, /\[S1\]/);
   assert.equal(limited.sources[0].text, doc.passages[0].text);
   assert.equal((await ask.POST(req('POST', { ...question, documents: [doc] }))).status, 400);
