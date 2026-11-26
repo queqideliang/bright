@@ -6,9 +6,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { T, DEMO_PROJECTS } from "@/lib/constants";
+import { T } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
-import type { Lang, Project, Translations, User } from "@/lib/types";
+import type { Lang, Translations, User } from "@/lib/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface AppState {
@@ -19,17 +19,10 @@ interface AppState {
   supabaseUser: SupabaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (next?: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
   verifyOTP: (email: string, token: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
-  selectedProject: Project;
-  setSelectedProject: (p: Project) => void;
-  showUpload: boolean;
-  setShowUpload: (v: boolean) => void;
-  /** 上传完成后调用，触发 Dashboard 重新拉取项目列表 */
-  dashboardRefreshKey: number;
-  refreshDashboard: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -49,10 +42,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("zh");
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<Project>(DEMO_PROJECTS[0]);
-  const [showUpload, setShowUpload] = useState(false);
-  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
-  const refreshDashboard = useCallback(() => setDashboardRefreshKey((k) => k + 1), []);
 
   const supabase = createClient();
 
@@ -86,13 +75,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /** Google OAuth 登录 */
-  const loginWithGoogle = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({
+  const loginWithGoogle = useCallback(async (next = '/models') => {
+    const callback = new URL('/auth/callback', window.location.origin);
+    callback.searchParams.set('next', next);
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callback.href,
       },
     });
+    return { error: error?.message ?? null };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -143,12 +135,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         signup,
         verifyOTP,
         logout,
-        selectedProject,
-        setSelectedProject,
-        showUpload,
-        setShowUpload,
-        dashboardRefreshKey,
-        refreshDashboard,
       }}
     >
       {children}

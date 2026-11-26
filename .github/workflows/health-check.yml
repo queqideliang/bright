@@ -1,7 +1,7 @@
 # ================================================================
 #  每日健康检查 + Supabase 保活
 #  1. Supabase 免费版连续 7 天无活动会自动暂停 → 每天查询一次数据库保持活跃
-#  2. 同时检查网站和 VPS，任一失败则本次运行失败，GitHub 自动发邮件通知
+#  2. 同时检查网站和工作台，任一失败则本次运行失败，GitHub 自动发邮件通知
 # ================================================================
 
 name: Health Check
@@ -22,9 +22,8 @@ jobs:
       # NOTE: publishable key 本就公开在前端代码中，不属于机密
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_REaye51UOddK4AOfe2u_ow_TAnH-j_X
       SITE_URL: https://bim-ai.netlify.app
-      VPS_URL: http://23.226.135.237:8080
     steps:
-      - name: 检查 Supabase / 网站 / VPS
+      - name: 检查 Supabase / 网站 / 工作台
         run: |
           failed=0
 
@@ -46,10 +45,10 @@ jobs:
             failed=1
           fi
 
-          code=$(probe "$VPS_URL/health")
-          echo "VPS 后端: HTTP $code"
+          code=$(probe "$SITE_URL/workbench")
+          echo "模型工作台: HTTP $code"
           if [ "$code" != "200" ]; then
-            echo "::error::VPS 后端无响应，上传解析和 AI 审计将不可用，请重启 VPS 服务"
+            echo "::error::模型工作台无法访问，请检查网站部署"
             failed=1
           fi
 

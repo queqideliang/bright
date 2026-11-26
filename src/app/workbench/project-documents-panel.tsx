@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { BookOpen, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { findPassages, listDocuments, readProjectFile, removeDocument, saveDocument, type ProjectDocument } from '@/lib/project-documents';
 import './project-documents.css';
@@ -319,7 +320,7 @@ function AuthenticatedWorkspace({ shareId }: { shareId: string | null }) {
   }, [check]);
   if (owner) return <DocumentWorkspace key={owner + ':' + (shareId || '')} owner={owner} shareId={shareId} checkSession={check} />;
   if (pending) return <p role="status">正在检查登录状态…</p>;
-  const loginUrl = '/login?next=' + encodeURIComponent(shareId ? sharePath(shareId) : '/workbench');
+  const loginUrl = '/login?next=' + encodeURIComponent(shareId ? sharePath(shareId) : '/workbench?tool=documents');
   return <div className="bv-doc-login"><p>{shareId ? '请登录后查看共享资料并提问。' : '请登录后添加本机资料并提问。'}登录会在新标签页打开，当前模型会保留。</p>
     <a className="bv-doc-primary" href={loginUrl} target="_blank" rel="noopener noreferrer">登录</a>
     <button type="button" onClick={check}>重新检查登录状态</button></div>;
@@ -328,21 +329,23 @@ function AuthenticatedWorkspace({ shareId }: { shareId: string | null }) {
 function InteractivePanel() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
-  const shareId = useSearchParams().get('share');
+  const params = useSearchParams();
+  const shareId = params.get('share');
+  const openDocuments = params.get('tool') === 'documents';
   const validLink = shareId === null || /^[0-9a-f-]{36}\.[A-Za-z0-9_-]{24}$/.test(shareId);
   useEffect(() => {
-    if (shareId !== null && dialog.current && !dialog.current.open) {
+    if ((shareId !== null || openDocuments) && dialog.current && !dialog.current.open) {
       dialog.current.showModal();
       setOpen(true);
     }
-  }, [shareId]);
+  }, [shareId, openDocuments]);
   return <>
     <button type="button" className="bv-doc-trigger" aria-haspopup="dialog" onClick={() => {
       dialog.current?.showModal(); setOpen(true);
-    }}>项目资料问答</button>
+    }}><BookOpen size={16} aria-hidden="true" />项目资料问答</button>
     <dialog className="bv-doc-dialog" aria-label="项目资料问答" ref={dialog} onClose={() => setOpen(false)}>
       <div className="bv-doc-row"><h2>项目资料问答</h2>
-        <button type="button" aria-label="关闭项目资料问答" onClick={() => dialog.current?.close()}>关闭</button></div>
+        <button type="button" className="bv-doc-close" aria-label="关闭项目资料问答" onClick={() => dialog.current?.close()}><X size={18} aria-hidden="true" /></button></div>
       {open && (validLink ? <AuthenticatedWorkspace shareId={shareId} />
         : <p role="alert" className="bv-doc-error">共享链接不完整，请让提供者重新复制完整链接。</p>)}
     </dialog>

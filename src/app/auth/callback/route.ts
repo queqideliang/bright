@@ -6,11 +6,12 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { loginDestination } from "@/lib/login-destination";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = loginDestination(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
@@ -21,5 +22,8 @@ export async function GET(request: Request) {
   }
 
   // 认证失败 → 回到登录页
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  const retry = new URL('/login', origin);
+  retry.searchParams.set('error', 'auth_failed');
+  retry.searchParams.set('next', next);
+  return NextResponse.redirect(retry);
 }

@@ -67,7 +67,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 export async function captureViewerSnapshot(iframeEl: HTMLIFrameElement | null): Promise<string | null> {
   if (!iframeEl) return null;
   try {
-    // Speckle embed 是跨域 iframe，只在同源部署时能访问
+    // 仅同源 iframe 支持截图读取。
     const iframeDoc = iframeEl.contentDocument || iframeEl.contentWindow?.document;
     if (!iframeDoc) return null;
     const glCanvas = iframeDoc.querySelector("canvas") as HTMLCanvasElement | null;

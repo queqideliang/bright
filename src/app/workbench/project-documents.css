@@ -4,58 +4,69 @@
   cursor: pointer;
 }
 .bv-doc-trigger, .bv-doc-dialog button {
-  color: #1c506e;
-  border: 1px solid #abbdc9;
+  color: var(--bv-ink);
+  border: 1px solid var(--bv-line);
   background: #fff;
   padding: .45rem .75rem;
   border-radius: 6px;
 }
 .bv-doc-dialog {
-  color: #172b45;
-  border: 1px solid #c8d4dd;
+  color: var(--bv-ink);
+  border: 1px solid var(--bv-line);
   background: #fff;
   border-radius: 12px;
   margin: auto;
-  width: min(620px, calc(100vw - 2rem));
+  width: min(680px, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
   padding: clamp(1rem, 3vw, 1.75rem);
   overflow: auto;
   box-sizing: border-box;
-  box-shadow: 0 16px 75px #11273540;
+  box-shadow: 0 16px 75px #1c383035;
 }
-.bv-doc-dialog::backdrop { background: #102e4a82; }
+.bv-doc-dialog::backdrop { background: #17352f73; }
 .bv-doc-dialog h2, .bv-doc-dialog h3, .bv-doc-dialog h4 { margin: 0; line-height: 1.45; font-weight: 650; }
 .bv-doc-dialog h2 { font-size: 1.3rem; }
 .bv-doc-dialog h3 { font-size: 1rem; }
 .bv-doc-dialog h4 { font-size: .9rem; }
-.bv-doc-dialog p { font-size: .88rem; line-height: 1.6; margin: .5rem 0 .75rem; color: #465b6e; }
+.bv-doc-dialog p { font-size: .88rem; line-height: 1.6; margin: .5rem 0 .75rem; color: var(--bv-muted); }
 .bv-doc-dialog button:disabled { opacity: .55; cursor: default; }
-.bv-doc-dialog :focus-visible, .bv-doc-trigger:focus-visible { outline: 2px solid #087890; outline-offset: 3px; }
+.bv-doc-dialog :focus-visible, .bv-doc-trigger:focus-visible { outline: 2px solid var(--bv-teal); outline-offset: 3px; }
 .bv-doc-row, .bv-doc-shelf li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .bv-doc-shelf, .bv-doc-dialog form, .bv-doc-answer { margin-top: 1.25rem; }
 .bv-doc-shelf ul { padding: 0; margin: .55rem 0; list-style: none; max-height: 15rem; overflow: auto; }
-.bv-doc-shelf li { padding: .4rem 0; border-top: 1px solid #e1e8ed; }
+.bv-doc-shelf li { padding: .4rem 0; border-top: 1px solid var(--bv-line); }
 .bv-doc-shelf li label { display: flex; gap: .5rem; align-items: center; overflow-wrap: anywhere; font-size: .88rem; }
-.bv-doc-shelf input[type="checkbox"] { width: 1rem; height: 1rem; flex-shrink: 0; accent-color: #15526a; }
+.bv-doc-shelf input[type="checkbox"] { width: 1rem; height: 1rem; flex-shrink: 0; accent-color: var(--bv-teal); }
 .bv-doc-shelf li button { flex-shrink: 0; }
 .bv-doc-dialog form label { display: block; font-weight: 600; margin-bottom: .35rem; }
-.bv-doc-dialog textarea { font: inherit; font-size: .95rem; line-height: 1.5; color: inherit; width: 100%; box-sizing: border-box; resize: vertical; padding: .65rem; border: 1px solid #a6b7c3; border-radius: 6px; }
-.bv-doc-dialog .bv-doc-primary { display: inline-block; border: 1px solid #174f67; border-radius: 6px; background: #174f67; color: white; text-decoration: none; padding: .48rem .9rem; }
+.bv-doc-dialog textarea { font: inherit; font-size: .95rem; line-height: 1.5; color: inherit; width: 100%; box-sizing: border-box; resize: vertical; padding: .65rem; border: 1px solid #a7bbb1; border-radius: 6px; }
+.bv-doc-dialog .bv-doc-primary { display: inline-block; border: 1px solid var(--bv-teal); border-radius: 6px; background: var(--bv-teal); color: white; text-decoration: none; padding: .48rem .9rem; }
 .bv-doc-login button { margin-left: .6rem; }
 .bv-doc-dialog .bv-doc-error { color: #a02f2a; white-space: pre-line; }
-.bv-doc-answer { border-top: 1px solid #d6e0e7; padding-top: 1rem; }
-.bv-doc-answer p { white-space: pre-wrap; overflow-wrap: anywhere; color: #172b45; }
-.bv-doc-answer button { padding: .05rem .28rem; font-size: .83rem; margin-inline: .13rem; color: #075f7c; background: #e9f6fb; }
-.bv-doc-answer article { padding: .75rem; margin-top: .65rem; background: #f2f6f8; border-left: 3px solid #7aabb9; overflow-wrap: anywhere; }
-.bv-doc-sharing { border-top: 1px solid #d6e0e7; margin-top: 1rem; padding-top: .75rem; }
+.bv-doc-answer { border-top: 1px solid var(--bv-line); padding-top: 1rem; }
+.bv-doc-answer p { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--bv-ink); }
+.bv-doc-answer button { padding: .05rem .28rem; font-size: .83rem; margin-inline: .13rem; color: #075d54; background: var(--bv-tint); }
+.bv-doc-answer article { padding: .75rem; margin-top: .65rem; background: var(--bv-paper); border-left: 3px solid #70ac97; overflow-wrap: anywhere; }
+.bv-doc-sharing { border-top: 1px solid var(--bv-line); margin-top: 1rem; padding-top: .75rem; }
 .bv-doc-sharing summary { cursor: pointer; font-weight: 600; }
 .bv-doc-sharing label { display: grid; gap: .25rem; font-size: .88rem; }
-.bv-doc-sharing input[type="text"] { min-width: 0; width: 100%; box-sizing: border-box; padding: .45rem; font: inherit; color: inherit; border: 1px solid #a6b7c3; border-radius: 6px; }
+.bv-doc-sharing input[type="text"] { min-width: 0; width: 100%; box-sizing: border-box; padding: .45rem; font: inherit; color: inherit; border: 1px solid #a7bbb1; border-radius: 6px; }
 .bv-doc-sharing > button, .bv-doc-sharing section { margin-top: .6rem; }
 .bv-doc-sharing li { overflow-wrap: anywhere; }
 .bv-doc-sharing li div { display: flex; flex-shrink: 0; gap: .25rem; }
 .bv-share-link { display: flex; align-items: flex-end; gap: .5rem; margin-top: .65rem; }
 .bv-share-link label { flex: 1; min-width: 0; }
-.bv-doc-ocr { padding: .75rem; background: #f4f7f8; border-radius: 6px; }
+.bv-doc-ocr { padding: .75rem; background: var(--bv-paper); border-radius: 6px; }
 .bv-doc-ocr label { display: flex; align-items: flex-start; gap: .4rem; font-size: .88rem; line-height: 1.6; }
 .bv-doc-ocr > div { margin-top: .5rem; }
+.bv-doc-dialog .bv-doc-close { display: inline-grid; place-items: center; padding: 0; width: 34px; height: 34px; border: 1px solid var(--bv-line); border-radius: 7px; }
+.bv-doc-row:first-child > h2 { color: var(--bv-ink); font-size: 1.4rem; letter-spacing: -.035em; }
+.bv-doc-dialog > .bv-doc-row:first-child { padding-bottom: .85rem; border-bottom: 1px solid var(--bv-line); margin-bottom: 1rem; }
+.bv-doc-dialog summary { color: var(--bv-teal); }
+.bv-doc-dialog button:not(:disabled):hover { border-color: #73a997; }
+.bv-doc-dialog .bv-doc-primary:hover { background: #09665c; }
+.bv-doc-dialog .bv-doc-shelf input[type="checkbox"] { accent-color: var(--bv-teal); }
+@media (max-width: 520px) {
+  .bv-doc-dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
+  .bv-doc-sharing li { flex-wrap: wrap; }
+}

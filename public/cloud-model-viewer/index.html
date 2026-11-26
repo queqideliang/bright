@@ -6,10 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' blob: data:; worker-src 'self' blob:; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>三维模型</title>
   <style>
-    html,body,#scene{margin:0;width:100%;height:100%;overflow:hidden;background:#edf2f5;font:15px system-ui,sans-serif;color:#163346}
+    html,body,#scene{margin:0;width:100%;height:100%;overflow:hidden;background:#edf1ed;font:14px system-ui,"Microsoft YaHei",sans-serif;color:#18342f}
     #scene{position:relative}canvas{display:block}#scene>div{display:none}
-    #tools{position:absolute;bottom:14px;left:14px;max-width:calc(100% - 52px);padding:8px 12px;background:#fffffff0;border:1px solid #cad7df;border-radius:7px}
-    button{font:inherit;cursor:pointer;color:#174e70;background:white;border:1px solid #9eb2c1;border-radius:5px;padding:5px 10px;margin-right:10px}
+    #tools{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:14px;max-width:calc(100% - 28px);box-sizing:border-box;padding:6px 12px 6px 6px;background:#fffffff5;border:1px solid #cbd8ce;border-radius:9px;box-shadow:0 3px 14px #18342f10}
+    #tools:not([hidden]){display:flex;align-items:center;gap:10px}#summary{color:#52685f;font-size:12px}
+    button{flex:none;font:inherit;cursor:pointer;color:#075e53;background:#edf5f0;border:1px solid #d0ddd4;border-radius:6px;padding:7px 12px}button:focus-visible{outline:2px solid #087d71}
   </style>
   <script defer src="./vendor/o3dv.js"></script>
   <script defer src="./preview.js"></script>

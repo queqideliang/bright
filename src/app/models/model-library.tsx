@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Box, ChevronDown, CloudUpload, FileBox, FolderOpen, LoaderCircle, Search, Settings, Upload } from 'lucide-react';
 import { useApp } from '@/lib/app-context';
 import { libraryExtensions, libraryFormats, libraryMaxBytes, modelExtension, type LibraryItem } from '@/lib/model-library/formats';
 
@@ -42,6 +43,8 @@ export function ModelLibrary() {
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [filter, setFilter] = useState('');
+  const visible = items.filter(item => item.name.toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()));
 
   async function refresh(offset: number, signal?: AbortSignal) {
     setReading(true); setListError('');
@@ -61,7 +64,7 @@ export function ModelLibrary() {
   }, []);
 
   async function upload(file?: File) {
-    if (!file || uploadLock.current) return;
+    if (!file || uploadLock.current || sessionLoading) return;
     setError('');
     if (!libraryExtensions.includes(modelExtension(file.name))) { setError('此格式尚未接入。请查看下方支持的格式。'); return; }
     if (!file.size || file.size > libraryMaxBytes) { setError('请选择非空且不超过 50 MiB 的文件。'); return; }
@@ -92,25 +95,51 @@ export function ModelLibrary() {
     } finally { if (input.current) input.current.value = ''; }
   }
 
-  return <main className="bv-library">
-    <header className="bv-bar"><Link href="/">BRIGHT VISION</Link><Link href="/dashboard">项目工作台</Link></header>
-    <section className="bv-shelf">
-      <h1>我的模型库</h1><p>上传后直接查看。用同一账号登录，可以继续打开已保存的模型。</p>
-      <div className={'bv-upload' + (dragging ? ' dragging' : '')} onDragOver={e => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void upload(e.dataTransfer.files[0]); }}>
-        <button className="bv-primary" disabled={sessionLoading || !!progress} onClick={() => input.current?.click()}>上传模型</button>
+  return <main className="ml-page"><div className="ml-container">
+    <header className="ml-title"><div className="ml-title-row"><h1>我的模型库</h1>
+      <Link href="/settings" className="ml-account"><Settings size={16}/>账户设置</Link></div><p>保存项目模型，随时在浏览器中打开。</p></header>
+    <section className={'ml-upload' + (dragging ? ' is-dragging' : '')} aria-labelledby="ml-upload-title"
+      onDragOver={e => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false); }}
+      onDrop={e => { e.preventDefault(); setDragging(false); void upload(e.dataTransfer.files[0]); }}>
+      <div className="ml-upload-main">
+        <div className="ml-upload-icon"><CloudUpload size={33} strokeWidth={1.5} aria-hidden="true" /></div>
+        <div className="ml-upload-copy"><h2 id="ml-upload-title">{dragging ? '松开以上传模型' : '添加模型文件'}</h2>
+          <p>拖入文件，或从设备中选择。单个文件最大 50 MiB。</p></div>
+        <button className="ml-primary" disabled={sessionLoading || !!progress} onClick={() => input.current?.click()}>
+          {progress ? <LoaderCircle size={18} className="ml-spin" /> : <Upload size={18} />}上传模型</button>
         <input ref={input} id="library-file" type="file" hidden disabled={sessionLoading || !!progress} accept={libraryExtensions.map(ext => '.' + ext).join(',')} onChange={e => void upload(e.target.files?.[0])} />
-        <span>或拖入一个文件 · 单个文件最大 50 MiB</span>
-        <details><summary>支持的格式与文件要求</summary><p>{libraryFormats.map(([name]) => name).join('、')}。glTF 请内嵌资源或导出 GLB。OBJ 单文件可查看几何。Revit 模型可先导出 IFC 或 BV ZIP。</p></details>
       </div>
-      {progress && <p role="status">{progress}</p>}{error && <p className="bv-error" role="alert">{error}</p>}
-      <h2>已保存的模型</h2>
-      {listError && <p role="alert" className="bv-error">{listError} <button onClick={() => void refresh(0)}>重新加载</button></p>}
-      {!items.length && !listError && <p>{reading ? '正在读取模型…' : '模型库里还没有文件。上传第一个模型后，会显示在这里。'}</p>}
-      <ul className="bv-files">{items.map(item => <li key={item.id}><Link href={'/models/' + item.id}>
-        <strong>{item.name}</strong><span>{displaySize(item.size)}</span><span>打开模型</span>
-      </Link></li>)}</ul>
-      {next !== null && <button disabled={reading} onClick={() => void refresh(next)}>加载更多模型</button>}
+      {progress && <p className="ml-notice" role="status"><LoaderCircle size={15} className="ml-spin" />{progress}</p>}
+      {error && <p className="ml-notice ml-error" role="alert">{error}</p>}
+      <details className="ml-formats"><summary><span>支持的格式与文件要求</span><ChevronDown size={15} /></summary>
+        <p>{libraryFormats.map(([name]) => name).join('、')}。</p>
+        <p>Revit 模型请先导出 IFC 或 BV ZIP。glTF 需内嵌资源，也可导出 GLB。单文件 OBJ 可查看几何。</p>
+      </details>
     </section>
-  </main>;
+    <section className="ml-list" aria-labelledby="ml-saved-title">
+      <div className="ml-list-bar"><h2 id="ml-saved-title">已保存的模型</h2>
+        {!!items.length && <label className="ml-filter"><Search size={17}/><input type="search" aria-label="筛选已加载模型" placeholder="筛选已加载模型" value={filter} onChange={e => setFilter(e.target.value)} /></label>}
+      </div>
+      {listError && <div className="ml-notice ml-error" role="alert">{listError} <button onClick={() => void refresh(0)}>重新加载</button></div>}
+      {!items.length && !listError && <div className="ml-empty" role="status">
+        {reading ? <LoaderCircle className="ml-spin" /> : <FolderOpen size={32} strokeWidth={1.5} />}
+        <h3>{reading ? '正在读取模型…' : '模型库里还没有文件'}</h3>{!reading && <p>上传第一个模型后，它会出现在这里。</p>}
+      </div>}
+      {!!items.length && !visible.length && <div className="ml-empty" role="status"><Search size={26}/><h3>没有匹配的模型</h3><button onClick={() => setFilter('')}>清除筛选</button></div>}
+      {!!visible.length && <>
+        <div className="ml-columns" aria-hidden="true"><span>文件名</span><span>大小</span><span>保存日期</span><span/></div>
+        <ul className="ml-files">{visible.map(item => {
+          const extension = modelExtension(item.name);
+          const date = Date.parse(item.createdAt);
+          return <li key={item.id}><Link href={'/models/' + item.id}>
+            <span className="ml-file-name"><span className="ml-file-icon">{['ifc','zip'].includes(extension) ? <Box size={22}/> : <FileBox size={22}/>}</span>
+              <span><strong>{item.name}</strong><small>{extension === 'zip' ? 'BV ZIP' : extension.toUpperCase()}</small></span>
+            </span><span className="ml-size">{displaySize(item.size)}</span><span className="ml-date">{Number.isFinite(date) ? new Intl.DateTimeFormat('zh-CN').format(date) : '—'}</span>
+            <span className="ml-open"><span>打开模型</span><ArrowRight size={16}/></span>
+          </Link></li>;
+        })}</ul></>}
+      {next !== null && <div className="ml-pagination"><button disabled={reading} onClick={() => void refresh(next)}>{reading ? '正在加载…' : '加载更多模型'}</button></div>}
+    </section>
+  </div></main>;
 }

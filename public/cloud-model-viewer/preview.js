@@ -10,7 +10,7 @@ window.addEventListener('message', event => {
   if (!(file instanceof File) || file.size === 0 || file.size > 50 * 1024 * 1024 || embedded) return;
   try {
     embedded = new OV.EmbeddedViewer(scene, {
-      backgroundColor: new OV.RGBAColor(237, 242, 245, 255), defaultColor: new OV.RGBColor(94, 144, 170),
+      backgroundColor: new OV.RGBAColor(237, 241, 237, 255), defaultColor: new OV.RGBColor(101, 151, 142),
       onModelLoaded() {
         const model = embedded.GetModel();
         const triangles = model.TriangleCount(), lines = model.LineCount(), vertices = model.VertexCount();

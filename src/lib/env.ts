@@ -7,9 +7,6 @@ const REQUIRED_SERVER_VARS = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "GEMINI_API_KEY",
-  "SPECKLE_TOKEN",
-  "VPS_SECRET_TOKEN",
 ] as const;
 
 export function validateEnv() {

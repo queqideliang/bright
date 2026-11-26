@@ -18,7 +18,6 @@ export function GeometryView({ id }: { id: string }) {
       if (event.data?.type === 'bv-geometry-error') { setStatus(''); setError(event.data.message); }
     }
     window.addEventListener('message', receive);
-    setError(''); setStatus('正在下载模型…');
     downloadCloudModel(id, { signal: controller.signal, storageOrigin: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).origin,
       onProgress: (n, total) => setStatus('正在下载模型 ' + Math.floor(100 * n / total) + '%') }).then(file => {
       if (controller.signal.aborted) return;
@@ -28,8 +27,8 @@ export function GeometryView({ id }: { id: string }) {
     return () => { controller.abort(); window.removeEventListener('message', receive); };
   }, [id, ready, attempt]);
   return <div className="bv-stage">
-    <iframe key={attempt} ref={frame} onLoad={() => setReady(true)} className="bv-frame" src="/cloud-model-viewer/index.html" title="三维模型" allow="fullscreen" referrerPolicy="no-referrer" />
+    <iframe key={attempt} ref={frame} onLoad={() => { setStatus('正在下载模型…'); setReady(true); }} className="bv-frame" src="/cloud-model-viewer/index.html" title="三维模型" allow="fullscreen" referrerPolicy="no-referrer" />
     {status && <div className="bv-feedback" role="status">{status}</div>}
-    {error && <div className="bv-feedback bv-error" role="alert">{error} <button onClick={() => { setReady(false); setError(''); setAttempt(n => n + 1); }}>重新打开</button></div>}
+    {error && <div className="bv-feedback bv-error" role="alert">{error} <button onClick={() => { setReady(false); setError(''); setStatus('正在准备查看器…'); setAttempt(n => n + 1); }}>重新打开</button></div>}
   </div>;
 }

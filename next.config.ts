@@ -16,17 +16,12 @@ const nextConfig: NextConfig = {
       ] },
     ];
   },
-  // NOTE: 允许从 Supabase Storage 和 Speckle 加载图片资源
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
-      },
-      {
-        protocol: "https",
-        hostname: "app.speckle.systems",
       },
       {
         protocol: "https",

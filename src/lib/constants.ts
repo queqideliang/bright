@@ -2,7 +2,7 @@
 //  常量定义 — 翻译字典、演示数据、AI 回复、样式色板
 // ================================================================
 
-import type { Project, Translations } from "./types";
+import type { Translations } from "./types";
 
 // ── 双语翻译字典 ──────────────────────────────────────────────
 export const T: Record<"zh" | "en", Translations> = {
@@ -130,16 +130,3 @@ export const S = {
     blue: "#3b82f6", blueBg: "#eff6ff",
   },
 } as const;
-
-// ── 演示项目数据 ───────────────────────────────────────────────
-export const DEMO_PROJECTS: Project[] = [];
-
-// ── AI 关键词回复（Demo 模式） ─────────────────────────────────
-export const AI_RESPONSES: Record<string, string> = {};
-
-// ── Speckle 配置（后期替换为真实 stream/model ID）─────────────
-// NOTE: 当前使用 Speckle 官方演示流，上线前需替换为自己的 project/model ID
-export const SPECKLE_CONFIG = {
-  projectId: "3073b96bb1",
-  modelId:   "all",
-};

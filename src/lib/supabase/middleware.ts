@@ -37,14 +37,14 @@ export async function updateSession(request: NextRequest) {
 
   // 未登录用户访问受保护路由 → 重定向到登录页
   const isProtectedRoute =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/viewer") ||
     request.nextUrl.pathname.startsWith("/pricing") ||
     request.nextUrl.pathname.startsWith("/settings");
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 

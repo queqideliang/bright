@@ -10,8 +10,7 @@ import { useApp } from "@/lib/app-context";
 import { S } from "@/lib/constants";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", labelKey: "nav_dash" as const, Icon: IconDashboard },
-  { href: "/viewer",    labelKey: "nav_viewer" as const, Icon: IconViewer },
+  { href: "/models", labelKey: null, Icon: IconDashboard },
   { href: "/pricing",   labelKey: "nav_pricing" as const, Icon: IconPricing },
   { href: "/settings",  labelKey: "nav_settings" as const, Icon: IconSettings },
 ];
@@ -75,7 +74,7 @@ export function Sidebar() {
           }}
         >
           <IconViewer size={18} />
-          {lang === "zh" ? "本机模型查看与审核" : "Local model workbench"}
+          {lang === "zh" ? "模型工作台" : "Model workbench"}
         </button>
         {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
           const isActive = pathname.startsWith(href);
@@ -97,7 +96,7 @@ export function Sidebar() {
               }}
             >
               <Icon size={18} />
-              {labelKey ? t[labelKey] : (t.lang === "EN" ? "我的模型库" : "My models")}
+              {labelKey ? t[labelKey] : (lang === "zh" ? "我的模型库" : "My models")}
             </button>
           );
         })}
