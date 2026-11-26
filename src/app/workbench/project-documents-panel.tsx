@@ -7,7 +7,7 @@ import { findPassages, listDocuments, readProjectFile, removeDocument, saveDocum
 import './project-documents.css';
 
 type Sources = ReturnType<typeof findPassages>;
-type Answer = { text: string; sources: Sources };
+type Answer = { text: string; sources: Sources; sourcesOnly: boolean };
 type ShareSummary = { id: string; title: string; createdAt: string; documentCount: number; passageCount: number };
 type SharedView = ShareSummary & { documents: Pick<ProjectDocument, 'title' | 'passages'>[] };
 const sharesApi = '/api/workbench/shares';
@@ -221,7 +221,7 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
       if (shareId && response.status === 404) setShared(null);
       if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : '暂时无法完成问答，请重试。');
       if (typeof body.answer !== 'string' || !body.answer.trim()) throw new Error('未收到有效答复，请重试。');
-      setAnswer({ text: body.answer, sources: shareId ? body.sources : sources });
+      setAnswer({ text: body.answer, sources: shareId ? body.sources : sources, sourcesOnly: body.mode === 'sources-only' });
     });
   }
 
@@ -247,14 +247,15 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
           const other = files.filter(file => !image(file));
           if (other.length) void add(other, slideImageConsent);
         }} /></div>
-      <p>支持 Excel（XLSX、XLS）、CSV、TSV、PowerPoint（PPTX、PPT）、PDF、DOCX、TXT、Markdown，以及 JPG、PNG、WebP 图片。单个文件最大 12 MiB。</p>
+        <p>支持 Excel（XLSX、XLS）、CSV、TSV、PowerPoint（PPTX、PPT）、PDF、DOCX、TXT、Markdown，以及 JPG、PNG、WebP 图片。单个文件最大 12 MiB。</p>
       <label><input type="checkbox" checked={slideImageConsent} disabled={busy}
         onChange={event => setSlideImageConsent(event.target.checked)} /> 添加 PPTX 时，将可见幻灯片中的内嵌图片发送给 AI 识别。图片可能包含幻灯片裁剪区域外的内容。</label>
-      {!!pendingImages.length && <div className="bv-doc-ocr">
+        {(slideImageConsent || pendingImages.length > 0) && <p>云端识别暂时不可用时，浏览器会在本机识别图片中的简体中文和英文印刷文字。</p>}
+        {!!pendingImages.length && <div className="bv-doc-ocr">
         <h4>识别图片文字</h4>
         <ul>{pendingImages.map((file, index) => <li key={index}>{file.name}</li>)}</ul>
         <label><input type="checkbox" checked={ocrConsent} disabled={busy} onChange={event => setOcrConsent(event.target.checked)} />
-          我同意将上面选中的图片内容发送给 AI 服务识别。</label>
+            我同意将上面选中的图片内容发送给 AI 服务识别。</label>
         <div><button type="button" disabled={busy || !ocrConsent} onClick={() => {
           const files = pendingImages; setPendingImages([]); setOcrConsent(false); void add(files, true);
         }}>识别并添加图片</button> <button type="button" disabled={busy} onClick={() => { setPendingImages([]); setOcrConsent(false); }}>取消</button></div>
@@ -279,11 +280,11 @@ function DocumentWorkspace({ owner, shareId, checkSession }: { owner: string; sh
     </form>
     {status && <p role="status">{status}</p>}
     {error && <p role="alert" className="bv-doc-error">{error}</p>}
-    {answer && <section className="bv-doc-answer" data-document-answer="" aria-live="polite">
-      <h3>回答</h3><p>{answer.text.split(/(\[S\d+\])/g).map((part, index) => {
+    {answer && <section className="bv-doc-answer" data-document-answer={answer.sourcesOnly ? undefined : ''} data-document-sources={answer.sourcesOnly ? '' : undefined} aria-live="polite">
+      <h3>{answer.sourcesOnly ? '检索到的原文' : '回答'}</h3><p>{answer.text.split(/(\[S\d+\])/g).map((part, index) => {
         const ref = answer.sources.find(item => '[' + item.id + ']' === part);
         return ref ? <button type="button" key={index} aria-label={'查看引用 ' + ref.id}
-          aria-expanded={sourceId === ref.id} onClick={() => setSourceId(ref.id)}>{part}</button> : part;
+          aria-expanded={sourceId === ref.id} onClick={() => setSourceId(ref.id)}>{answer.sourcesOnly ? part + ' ' + ref.title + ' · ' + ref.location : part}</button> : part;
       })}</p>
       {currentSource && <article ref={sourcePanel} tabIndex={-1} aria-label={'引用 ' + currentSource.id + ' 原文'}>
         <h4>{currentSource.title} · {currentSource.location}</h4><p>{currentSource.text}</p>

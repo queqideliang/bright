@@ -2,9 +2,19 @@ import { createClient } from '@/lib/supabase/server';
 import { findPassages } from '../../../../lib/project-document-search.ts';
 import { failure, jsonResponse, readInput } from '../http.ts';
 import { readShare } from '../shares/store.ts';
-import { AskError, maxRequestBytes, parseCompletion, prepareTask } from './contract.ts';
-import { completeTask } from './provider.ts';
+import { AskError, maxRequestBytes, parseCompletion, prepareTask, type Task } from './contract.ts';
+import { completeTask, ProviderUnavailable } from './provider.ts';
 import { checkRate, requireWorkbenchOrigin } from './access.ts';
+
+async function answerTask(task: Task) {
+  try {
+    return parseCompletion(task, await completeTask(task));
+  } catch (error) {
+    if (!(error instanceof ProviderUnavailable) || task.mode !== 'documents' || !task.sourceIds?.size) throw error;
+    const citations = [...task.sourceIds].slice(0, 3).map(id => '[' + id + ']').join(' ');
+    return { mode: 'sources-only', answer: 'AI 服务暂时无法生成回答。可打开本次检索的资料片段核对原文。 ' + citations };
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,10 +37,10 @@ export async function POST(request: Request) {
       const sources = findPassages(share.documents, input.question);
       if (!sources.length) return jsonResponse({ answer: '这份共享资料中没有检索到相关片段。', sources });
       const task = prepareTask({ question: input.question, documents: sources });
-      return jsonResponse({ ...parseCompletion(task, await completeTask(task)), sources });
+      return jsonResponse({ ...await answerTask(task), sources });
     }
     const task = prepareTask(input);
     checkRate(user.id);
-    return jsonResponse(parseCompletion(task, await completeTask(task)));
+    return jsonResponse(await answerTask(task));
   } catch (error) { return failure(error); }
 }

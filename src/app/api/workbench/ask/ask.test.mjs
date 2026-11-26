@@ -30,9 +30,11 @@ test('authenticated workbench queries, documents and provider boundaries', async
   process.env.DASHSCOPE_BASE_URL = 'https://model.test/v1';
   process.env.DASHSCOPE_MODEL = 'test-model';
   let calls = 0;
+  let upstreamStatus = 200;
   let completion = { plan };
   globalThis.fetch = async (url, init) => {
     calls++;
+    if (upstreamStatus !== 200) return new Response('', { status: upstreamStatus });
     const input = JSON.parse(init.body);
     if (url.hostname === 'model.test') {
       assert.equal(input.model, 'test-model');
@@ -54,6 +56,7 @@ test('authenticated workbench queries, documents and provider boundaries', async
   assert.equal((await POST(request({ ...data, owner: 'other-qa' }))).status, 403);
   assert.equal((await POST(request({ question: '依据？', documents: [source, source] }))).status, 400);
   assert.equal((await POST(request(data))).status, 503);
+  assert.equal((await POST(request({ question: '依据？', documents: [source] }))).status, 503);
   assert.equal(calls, 0);
   process.env.DASHSCOPE_API_KEY = 'fake-qwen';
   process.env.GEMINI_API_KEY = 'fake-gemini';
@@ -68,6 +71,20 @@ test('authenticated workbench queries, documents and provider boundaries', async
   assert.deepEqual(await (await POST(request(docs))).json(), { answer: completion.answer });
   completion = { supported: true, answer: '需填交付编码。[S8]' };
   assert.equal((await POST(request(docs))).status, 502);
+  for (upstreamStatus of [429, 502, 503, 504]) {
+    const degraded = await POST(request(docs));
+    assert.equal(degraded.status, 200);
+    const content = await degraded.json();
+    assert.equal(content.mode, 'sources-only');
+    assert.match(content.answer, /AI 服务暂时无法生成回答/);
+    assert.match(content.answer, /\[S1\]/);
+    assert(!content.answer.includes(source.text));
+  }
+  upstreamStatus = 429;
+  assert.equal((await POST(request(data))).status, 429);
+  upstreamStatus = 403;
+  assert.equal((await POST(request(docs))).status, 503);
+  upstreamStatus = 200;
   delete process.env.DASHSCOPE_API_KEY;
   completion = { supported: false };
   assert.match((await (await POST(request(docs))).json()).answer, /没有足够依据/);
@@ -75,4 +92,5 @@ test('authenticated workbench queries, documents and provider boundaries', async
   completion = { plan };
   for (let i = 0; i < 20; i++) assert.equal((await POST(request(data))).status, 200);
   assert.equal((await POST(request(data))).status, 429);
+  assert.equal((await POST(request(docs))).status, 429);
 });
