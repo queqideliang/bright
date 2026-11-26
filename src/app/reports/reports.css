@@ -1,0 +1,27 @@
+.reports-main { max-width: 1040px; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem) 1rem; color: var(--bv-ink); font-family: var(--bv-font); }
+.report-sheet { padding: clamp(1rem, 4vw, 2.5rem); border: 1px solid var(--bv-line); background: var(--bv-surface); border-radius: 12px; overflow-wrap: anywhere; }
+.report-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.report-heading h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0; line-height: 1.25; font-weight: 650; }
+.report-heading p, .report-list span { font-size: .88rem; color: var(--bv-muted); }
+.report-heading p { margin: 0 0 .35rem; }
+.report-action, .report-pages a, .report-pages button { border: 1px solid var(--bv-line); border-radius: 6px; padding: .5rem .85rem; color: var(--bv-teal); font: inherit; background: var(--bv-surface); text-decoration: none; cursor: pointer; }
+.report-action:disabled, .report-pages button:disabled { opacity: .55; cursor: default; }
+.report-back { display: inline-block; margin-bottom: .85rem; color: var(--bv-teal); }
+.report-list { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+.report-list li { border-top: 1px solid var(--bv-line); padding: .9rem 0; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .4rem 1rem; }
+.report-list a { color: var(--bv-teal); text-decoration: underline; text-underline-offset: .16em; }
+.report-facts { display: flex; flex-wrap: wrap; gap: .8rem 2rem; margin: 1.25rem 0; }
+.report-facts dt, .report-issues dt { color: var(--bv-muted); font-size: .85rem; }
+.report-facts dd, .report-issues dd { margin: 0; }
+.report-sheet h2 { font-size: 1.1rem; margin: 1.75rem 0 .75rem; font-weight: 650; }
+.report-note { background: var(--bv-tint); padding: .65rem .85rem; border-left: 3px solid var(--bv-teal); white-space: pre-line; }
+.report-table { overflow-x: auto; }
+.report-table table { width: 100%; border-collapse: collapse; text-align: left; }
+.report-table th, .report-table td { padding: .55rem; border-bottom: 1px solid var(--bv-line); }
+.report-table thead { background: var(--bv-paper); }
+.report-issues { padding-left: 1.5rem; }
+.report-issues li { padding: .7rem .15rem; border-bottom: 1px solid var(--bv-line); }
+.report-issues p, .report-issues dl { margin: .35rem 0; }
+.report-issues dl > div { display: grid; grid-template-columns: 4.5rem 1fr; gap: .5rem; }
+.report-issues dd, .report-issues p { white-space: pre-wrap; }
+.report-pages { display: flex; align-items: center; gap: .85rem; flex-wrap: wrap; margin-top: 1rem; }

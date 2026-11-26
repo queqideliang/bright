@@ -4,9 +4,9 @@
   "generator": "web/scripts/sync-bim-viewer.mjs",
   "archive": {
     "file": "bim-viewer-web.json.gz",
-    "bytes": 2051922,
-    "sha256": "5dacb8c89bf1c2003f9136ae4c6a302a6f6c6222e2b0e0147cc022806d02c2f2",
-    "uncompressedBytes": 8930163
+    "bytes": 2062710,
+    "sha256": "87160377e73448fdbe12daf68b43ac19a723b279216bb6006fd5f169603939a1",
+    "uncompressedBytes": 8956083
   },
   "files": [
     {
@@ -30,14 +30,14 @@
       "sha256": "f1d7100a4c952da9550a5674ff74d3bc0bf377e7658ff3c4ad19b3597aea2f4a"
     },
     {
-      "path": "assets/index-BcqtePB9.css",
-      "bytes": 45682,
-      "sha256": "439187c9dcb792155bd3e2bedab1b154a56029e2156ad7dcf90dec5f66b4d09d"
+      "path": "assets/index-CxVQVDkt.js",
+      "bytes": 867127,
+      "sha256": "6cd8f844dd9fc6f880729c1e0393c2cc01f77fb6b8069e4b1713951bbfebab08"
     },
     {
-      "path": "assets/index-e8T7nFPH.js",
-      "bytes": 847795,
-      "sha256": "53bc0e52df32ef4c11d2f6abc39b190e63e6945751821a2eb7fc3cbf6da11a6d"
+      "path": "assets/index-iAZinrUB.css",
+      "bytes": 45791,
+      "sha256": "7f35a143bca37a46042b237137dd2516bbdbe51149b12c084040eb7d2f9642cf"
     },
     {
       "path": "assets/model.worker-Bg6GRY_M.js",
@@ -52,7 +52,7 @@
     {
       "path": "index.html",
       "bytes": 954,
-      "sha256": "08471945074dd37a029efd6054aba8bb94ef681a66a7c0d934d596b95fc19f3c"
+      "sha256": "8875829d1259dcf37667a90324e0baea90a1e2e042e0006d76b21c641c158f4f"
     },
     {
       "path": "licenses/LICENSE",
@@ -120,6 +120,7 @@
       "tools/bim-viewer/src/capacity-ui.ts": "8da7f622b2ccecc87d5664baac82070a9b423d4fcdc8533fdd5c1a229ec55c0d",
       "tools/bim-viewer/src/component-index.ts": "6a7d27308135fc527e41b59519468e23a3b0c689aba8ed727d30e4923e6d832a",
       "tools/bim-viewer/src/component-index.worker.ts": "c61f61cc2e229177da665544d26c9e27859185a9ad8dbf4bf3f9af45b859b491",
+      "tools/bim-viewer/src/delivery-review.ts": "3769af2c886d1b50b2829c3d78cecf666309fc19023e0d87d7e963d40b5ac6f3",
       "tools/bim-viewer/src/demo.ts": "a2a2e31e29ac8e16120e052b3a9d768613241712d20a70f51b442f191241a3eb",
       "tools/bim-viewer/src/desktop.d.ts": "f6b1792608af927e03d56b6ba88e4c3ac3723777073bebf4374ff4ea0166aea7",
       "tools/bim-viewer/src/export-vim.ts": "a195cf23531b294ab26b1990d47d1f2151f65a953a410489a9bfd2bf95bc4057",
@@ -145,21 +146,21 @@
       "tools/bim-viewer/src/import/shared-json.ts": "ad96002b2541472ab103cecd6136b4185ebe797b383b7b016694dbf1a3ddbc06",
       "tools/bim-viewer/src/import/typed-pages.ts": "aaa4a99771d06bbb3dcddc992317e541c118d89559ff6d3cfa789f507572e252",
       "tools/bim-viewer/src/import/zip.ts": "dec56cdb898dffb023084abcec9d1394cb7abe0bf9f428dc00118727210ef490",
-      "tools/bim-viewer/src/main.ts": "5b7d4f30fabd5b923b92c117d47f0f5e15bd2b4c97f6a50439818985e5aaea39",
+      "tools/bim-viewer/src/main.ts": "71fe601a01bf870d2a654e50860aa821804dada5c722d24e8573885b19713499",
       "tools/bim-viewer/src/model-assistant.ts": "86421ecdf0979f6f6d0ff16091b7879b2f42f3c40f80a8e4558e6a3c2f7f1d1f",
       "tools/bim-viewer/src/model.ts": "71b64fcf3724bb9de46652e2a442a34c9e83c30f8d1a2ee184ee2d8602f1ba84",
       "tools/bim-viewer/src/model.worker.ts": "e69f13dbd999582f4f237875254fc08721f2f109f058a1a9ce04327c91918cc8",
       "tools/bim-viewer/src/navigation-ui.css": "419c4f051e5ceb33b386b25ebfb1f7f67bc5a5977a539bfb7da8e67165a9678e",
       "tools/bim-viewer/src/open-timing.ts": "6aa6e8d50b5c48cd7a583fb4df0d81c18f4843273069cfda22d4d37ec4ccde9e",
-      "tools/bim-viewer/src/project-qa-bridge.ts": "fe7bc1d54d886d54247e20112649f0b600fced6a1b484ac973e789e429248973",
+      "tools/bim-viewer/src/project-qa-bridge.ts": "74ee936271c65116fe83707a56f5376eae20a9f54f22a72ed946c10a876d2fdc",
       "tools/bim-viewer/src/project-qa-model.ts": "472b69a1863f43015934f10f9a14bd70d71b20c645bd78fc1b5f035d7b260ed2",
       "tools/bim-viewer/src/property-store.ts": "3c566db543a7623d374e180af60ef36dba4d1ad4ca0c9229b9f6d7fad7c05277",
       "tools/bim-viewer/src/quantities.ts": "9ef27ac1784ad91d3d1c56c1d41264a18a8f6651da1289021da83c922eedc3ac",
       "tools/bim-viewer/src/quantity-ui.css": "6101f74d27b0915092099aa3fa8dda8a7bbcd812454fa278bb6f985e3a52a2e9",
       "tools/bim-viewer/src/quantity-ui.ts": "13093eebf2bc91bd876aade3ed05c27f276a8fe8646288e9b10a9d4b76a29786",
-      "tools/bim-viewer/src/review-ui.ts": "100cbc8649d880591367a5872f9223e398832de7d4efaaa8f4eb9f113fc4c49c",
-      "tools/bim-viewer/src/review.css": "d0436b35e30fac3d64c8c9813df122e37e26c26fcefdf09349c485fffa7e595e",
-      "tools/bim-viewer/src/review.ts": "8137b50914721aefae43ad6d33b41a822f0b3d6463bd87ba12b9e63c92368cdb",
+      "tools/bim-viewer/src/review-ui.ts": "3ba8f45a701d106e89c576c5dc779c3f8779dd32a0ba01ec9cee22d66821099b",
+      "tools/bim-viewer/src/review.css": "a6eb3382a7828c24f4039237e831eee5a032377cbeb5bee7aced21db59a9d540",
+      "tools/bim-viewer/src/review.ts": "efcd2fae99ec09def51b00094aeb2d4735dbd003234977186edc4cb409bef9a1",
       "tools/bim-viewer/src/revit-ui.css": "3e3612d799a572cd81097ff1c3bca285de169a44954a7f4322dc4755355415c2",
       "tools/bim-viewer/src/revit-ui.ts": "3edf9ef7e90ebeac6affdc85604e9ccb5e4ac2230efaa056ddd88052eb3475e5",
       "tools/bim-viewer/src/saved-views.ts": "1d3e80275a6c37ef7959d252728e7510f345e443987c57fbf8c65ffd031a5aa4",
@@ -180,7 +181,7 @@
       "tools/bim-viewer/src/vim-export.worker.ts": "95a714b501ca9afde13dbcf0df64c9a6155929ee0158b23fc0a2f2bbf7d42613",
       "tools/bim-viewer/src/web-model-loader.ts": "f1b79ea6c1ae2bc53cd4cdfc87b7fabd0c0fae32d6893a4521dc6d9fb253eb21",
       "tools/bim-viewer/src/workbench-ai-data.ts": "ecadfb6e314559df4b8b06d193068353b12eb7073ea9a4cd7ffbee7545aee0fa",
-      "tools/bim-viewer/src/workbench-entry.ts": "d87ea519b89e923987b7f2455897581d30d97d145ce46eab0dc8183a210261dc",
+      "tools/bim-viewer/src/workbench-entry.ts": "7bc728eb31da2bfcfdcf5d36963459af9f8ad38c337428cfd37f17f5fda269ba",
       "tools/bim-viewer/src/workbench-shell.css": "1f7845353b37acb37361a5306faf0d9a1f467f316a46ff82b8ec58e40ff15ed1",
       "tools/bim-viewer/tsconfig.json": "1e7b02e332322287734f990056853fe346fb4053daff4cb8612af4471d24b781",
       "tools/bim-viewer/vite.config.ts": "48524cc169dcd5e08b155b50746694fd448afce9c3afbcd22b2bd347db1d8363",

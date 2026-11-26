@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ModelReviewLink } from './model-review-link';
 
 const destinations = [
   { key: 'home', title: '工作概览', href: '/' },
@@ -8,8 +9,9 @@ const destinations = [
   { key: 'workbench', title: '看模工作台', href: '/workbench' },
 ] as const;
 
-export default function ProductHeader({ active, children }: {
-  active?: typeof destinations[number]['key'];
+export default function ProductHeader({ active, children, reviewHref = '/workbench?tool=review' }: {
+  active?: typeof destinations[number]['key'] | 'review';
+  reviewHref?: string;
   children?: ReactNode;
 }) {
   return <header className="bv-product-header">
@@ -21,6 +23,7 @@ export default function ProductHeader({ active, children }: {
       <nav className="bv-product-nav" aria-label="主导航">
         {destinations.map(item => <Link key={item.key} href={item.href}
           aria-current={item.key === active ? 'page' : undefined}>{item.title}</Link>)}
+        <ModelReviewLink href={reviewHref} active={active === 'review'} />
       </nav>
       <div className="bv-header-action">{children ?? <Link href="/workbench?tool=documents" className="bv-header-docs">
         <BookOpen size={16} aria-hidden="true" />项目 AI 问答

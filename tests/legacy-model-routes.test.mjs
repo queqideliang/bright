@@ -48,6 +48,21 @@ test('legacy bookmarks resolve before auth and discard identifiers belonging to 
   }
 });
 
+test('legacy first-party model bookmarks return to the historical report; old service links stay in the workbench', async () => {
+  const id = '115d1042-5230-4958-8ec5-af8c9c66f628';
+  for (const key of ['id','modelId']) {
+    const request = new NextRequest('https://example.invalid/viewer?'+key+'='+id);
+    assert.equal((await proxy(request)).headers.get('location'),'https://example.invalid/reports?model='+id);
+  }
+  const libraryId = '115d1042-5230-8958-8ec5-af8c9c66f628';
+  const library = new NextRequest('https://example.invalid/viewer?modelId='+libraryId.toUpperCase());
+  assert.equal((await proxy(library)).headers.get('location'),'https://example.invalid/models/'+libraryId);
+  for (const query of ['modelId=unknown','streamId=a&modelId='+id,'modelId='+id+'&id=another','stream=a&modelId='+libraryId]) {
+    const request = new NextRequest('https://example.invalid/viewer?'+query);
+    assert.equal((await proxy(request)).headers.get('location'),'https://example.invalid/workbench');
+  }
+});
+
 test('archived compliance and extraction are scoped to the owner and only use stored data', async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });

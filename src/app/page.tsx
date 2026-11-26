@@ -6,7 +6,7 @@ import './home.css';
 const tools = [
   { href: '/workbench?tool=export', name: '模型导出', icon: Boxes, description: '从 Revit 导出 BV 模型包，或将已打开的模型转换为 GLB、SCV。' },
   { href: '/workbench?tool=quantity', name: '工程算量', icon: Ruler, description: '按楼层、类别核对构件数量和工程量，导出明细。' },
-  { href: '/workbench?tool=review', name: '模型审核', icon: ClipboardCheck, description: '检查构件信息，定位缺项，导出项目审核清单。' },
+  { href: '/workbench?tool=review', name: '模型审核', icon: ClipboardCheck, description: '检查命名、分类和交付属性，定位问题并下载 PDF 审核报告。' },
 ] as const;
 
 export default function HomePage() {
